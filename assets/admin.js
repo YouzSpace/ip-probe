@@ -193,7 +193,7 @@
 
     /**
      * 切换到指定页面
-     * @param {string} page - dashboard | links | records
+     * @param {string} page - dashboard | links | records | about
      */
     function navigateTo(page) {
         if (page === currentPage) return;
@@ -214,6 +214,7 @@
             case 'dashboard': loadDashboard(); break;
             case 'links':     loadLinks();     break;
             case 'records':   currentPageNum = 1; loadRecords(1); break;
+            case 'about':     /* 静态页面，无需加载数据 */ break;
         }
     }
 

@@ -63,6 +63,11 @@ $isLoggedIn = is_logged_in();
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
                 <span>采集记录</span>
             </button>
+            <button class="nav-item" data-page="about">
+                <!-- Lucide: Info -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                <span>关于</span>
+            </button>
         </nav>
 
         <div class="sidebar-footer">
@@ -226,6 +231,68 @@ $isLoggedIn = is_logged_in();
                     <!-- Lucide: ChevronRight -->
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                 </button>
+            </div>
+        </section>
+
+        <!-- ====== 关于页面 ====== -->
+        <section id="page-about" class="page-section">
+            <h1 class="page-title">关于</h1>
+            <p class="page-desc">系统信息与技术说明</p>
+
+            <!-- 系统信息 -->
+            <div class="card" style="margin-bottom:20px;">
+                <div class="card-title">系统信息</div>
+                <div class="group-list">
+                    <div class="group-list-item"><span class="group-list-label">项目名称</span><span class="group-list-value">IP 探针系统</span></div>
+                    <div class="group-list-item"><span class="group-list-label">版本</span><span class="group-list-value">v1.0.0</span></div>
+                    <div class="group-list-item"><span class="group-list-label">运行环境</span><span class="group-list-value">PHP + JSON 文件存储（无数据库）</span></div>
+                    <div class="group-list-item"><span class="group-list-label">开发者</span><span class="group-list-value">数字柚子 · 小柚子</span></div>
+                </div>
+            </div>
+
+            <!-- 采集能力 -->
+            <div class="card" style="margin-bottom:20px;">
+                <div class="card-title">采集能力</div>
+                <div class="group-list">
+                    <div class="group-list-item"><span class="group-list-label">WebRTC 内网 IP</span><span class="group-list-value">通过 WebRTC 探测局域网真实 IP</span></div>
+                    <div class="group-list-item"><span class="group-list-label">公网 IPv4 / IPv6</span><span class="group-list-value">通过 ipify 获取公网双栈地址</span></div>
+                    <div class="group-list-item"><span class="group-list-label">地理位置</span><span class="group-list-value">精确到区县级（ip9.com.cn，免费免 Key）</span></div>
+                    <div class="group-list-item"><span class="group-list-label">操作系统 / 浏览器</span><span class="group-list-value">User-Agent 解析</span></div>
+                    <div class="group-list-item"><span class="group-list-label">屏幕分辨率</span><span class="group-list-value">逻辑分辨率 + 设备像素比</span></div>
+                    <div class="group-list-item"><span class="group-list-label">系统语言</span><span class="group-list-value">navigator.language</span></div>
+                    <div class="group-list-item"><span class="group-list-label">电池状态</span><span class="group-list-value">电量 + 充电状态（Battery API）</span></div>
+                    <div class="group-list-item"><span class="group-list-label">VPN / 代理检测</span><span class="group-list-value">基于 WebRTC 泄漏与 IP 归属地比对</span></div>
+                </div>
+            </div>
+
+            <!-- IP 归属地数据源 -->
+            <div class="card" style="margin-bottom:20px;">
+                <div class="card-title">IP 归属地数据源（优先级顺序）</div>
+                <div class="group-list">
+                    <div class="group-list-item">
+                        <span class="group-list-label">① ip9.com.cn</span>
+                        <span class="group-list-value">免费免 Key · 区县级 · IPv6 精准 · 60次/分钟</span>
+                    </div>
+                    <div class="group-list-item">
+                        <span class="group-list-label">② ip-api.com</span>
+                        <span class="group-list-value">免费 · 城市级 · 无日限额 · 45次/分钟</span>
+                    </div>
+                    <div class="group-list-item">
+                        <span class="group-list-label">③ ipapi.co</span>
+                        <span class="group-list-value">免费 · 城市级 · 1000次/天</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 文件结构 -->
+            <div class="card">
+                <div class="card-title">数据存储结构</div>
+                <div class="group-list">
+                    <div class="group-list-item"><span class="group-list-label">records.json</span><span class="group-list-value">采集记录，追加写入</span></div>
+                    <div class="group-list-item"><span class="group-list-label">links.json</span><span class="group-list-value">采集链接配置</span></div>
+                    <div class="group-list-item"><span class="group-list-label">.password_hash</span><span class="group-list-value">管理员密码哈希（bcrypt）</span></div>
+                    <div class="group-list-item"><span class="group-list-label">.htaccess</span><span class="group-list-value">阻止 data/ 目录直接访问</span></div>
+                </div>
             </div>
         </section>
 
