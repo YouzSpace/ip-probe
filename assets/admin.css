@@ -624,8 +624,9 @@ textarea.form-input {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    max-width: 300px;
-    display: inline-block;
+    max-width: 100%;
+    min-width: 0;
+    display: block;
 }
 
 .link-meta {
@@ -940,5 +941,26 @@ textarea.form-input {
 @media (max-width: 480px) {
     .stats-grid {
         grid-template-columns: 1fr;
+    }
+
+    /* 链接管理：移动端纵向排列 + 操作区换行 */
+    .link-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .link-info {
+        width: 100%;
+    }
+
+    .link-url {
+        max-width: 100%;
+        display: block;
+    }
+
+    .link-actions {
+        width: 100%;
+        justify-content: flex-end;
     }
 }
