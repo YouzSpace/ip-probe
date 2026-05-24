@@ -28,6 +28,35 @@
             "connection_downlink": 1.3,
             "is_proxy": false,
             "proxy_detected_by": null
+        },
+        {
+            "id": "rec_6a12a64972f97",
+            "server_ip": "127.0.0.1",
+            "created_at": "2026-05-24 07:18:33",
+            "link_id": "lnk_1964d63d",
+            "ipv4": "",
+            "ipv6": "2409:8a5c:4e60:9c40:c12:76c0:89e4:5eb7",
+            "webrtc_ips": [],
+            "location": {
+                "country": "中国",
+                "province": "广西壮族",
+                "city": "梧州",
+                "district": "",
+                "isp": "中国移动",
+                "source": "ip9.com.cn"
+            },
+            "user_agent_raw": "Mozilla\/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit\/537.36 (KHTML, like Gecko) Chrome\/147.0.0.0 Safari\/537.36 Edg\/147.0.0.0",
+            "os": "Windows 10",
+            "browser": "Edge 147",
+            "language": "zh-CN",
+            "screen": "1536x864",
+            "dpr": 1.25,
+            "battery_level": 100,
+            "battery_charging": true,
+            "network_type": "4g",
+            "connection_downlink": 0.45,
+            "is_proxy": false,
+            "proxy_detected_by": null
         }
     ]
 }

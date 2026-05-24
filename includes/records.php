@@ -169,11 +169,18 @@ function get_stats(): array
     $data = read_json(RECORDS_FILE);
     $records = $data['records'] ?? [];
 
+    // 链接总数
+    $linksData = read_json(LINKS_FILE);
+    $linksCount = count($linksData['links'] ?? []);
+
     $total = count($records);
     $today = date('Y-m-d');
 
     // 今日记录数
     $todayCount = 0;
+    // 近 7 天总数
+    $weekTotal = 0;
+    $weekStart = date('Y-m-d', strtotime('-6 days'));
     // 近 7 天趋势
     $weekTrend = [];
     // 操作系统分布
@@ -199,6 +206,11 @@ function get_stats(): array
         $recordDate = substr($createdAt, 0, 10);
         if ($recordDate === $today) {
             $todayCount++;
+        }
+
+        // 近 7 天计数
+        if ($recordDate >= $weekStart) {
+            $weekTotal++;
         }
 
         // 近 7 天趋势
@@ -240,11 +252,13 @@ function get_stats(): array
     $cityDist = array_slice($cityDist, 0, 10, true);
 
     return [
-        'total' => $total,
-        'today' => $todayCount,
-        'week_trend' => $weekTrendArr,
-        'os_dist' => $osDist,
+        'total'        => $total,
+        'today'        => $todayCount,
+        'links_count'  => $linksCount,
+        'week_total'   => $weekTotal,
+        'week_trend'   => $weekTrendArr,
+        'os_dist'      => $osDist,
         'browser_dist' => $browserDist,
-        'city_dist' => $cityDist,
+        'city_dist'    => $cityDist,
     ];
 }
