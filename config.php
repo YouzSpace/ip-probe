@@ -26,6 +26,14 @@ define('GEO_API_URL', 'http://ip-api.com/json/');
 
 // IPDataCloud 已废弃，ip9.com.cn（免费免Key直接开通）替代
 
+// ====== 版本与更新 ======
+
+/** 当前版本号 */
+define('APP_VERSION', 'v1.0.0');
+
+/** GitHub 仓库（用于检查更新） */
+define('GITHUB_REPO', 'YouzSpace/ip-probe');
+
 // ====== 存储文件路径 ======
 
 /** 采集记录 JSON 文件 */

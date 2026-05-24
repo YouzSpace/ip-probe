@@ -20,7 +20,7 @@ header('Content-Type: application/json; charset=utf-8');
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
 // 需要 Session 的 action
-$authActions = ['login', 'logout', 'check_auth', 'get_stats', 'get_links', 'create_link', 'delete_link', 'get_records', 'get_record', 'delete_records'];
+$authActions = ['login', 'logout', 'check_auth', 'get_stats', 'get_links', 'create_link', 'delete_link', 'get_records', 'get_record', 'delete_records', 'do_update'];
 
 if (in_array($action, $authActions, true)) {
     init_session();
@@ -40,6 +40,15 @@ try {
 
         case 'collect_info':
             handle_collect_info();
+            break;
+
+        case 'check_update':
+            handle_check_update();
+            break;
+
+        case 'do_update':
+            require_auth();
+            handle_do_update();
             break;
 
         // ====== 管理接口 ======
@@ -384,4 +393,128 @@ function handle_delete_records(): void
 
     $deleted = delete_records($ids);
     echo json_encode(['success' => true, 'deleted' => $deleted], JSON_UNESCAPED_UNICODE);
+}
+
+/**
+ * check_update: 检查 GitHub 仓库是否有新版本
+ *
+ * 先查 Releases API，没有 Release 则回退到 Commits API。
+ * 公开接口，无需登录。
+ */
+function handle_check_update(): void
+{
+    $repo       = GITHUB_REPO;
+    $currentVer = APP_VERSION;
+
+    // --- 1. 检查最新 Release ---
+    $release = github_api("https://api.github.com/repos/{$repo}/releases/latest");
+    if ($release !== null && !empty($release['tag_name'])) {
+        $latest = $release['tag_name'];
+        echo json_encode([
+            'current_version' => $currentVer,
+            'latest_version'  => $latest,
+            'has_update'      => $latest !== $currentVer,
+            'type'            => 'release',
+            'release_name'    => $release['name'] ?? $latest,
+            'body'            => $release['body'] ?? '',
+            'published_at'    => $release['published_at'] ?? '',
+            'html_url'        => $release['html_url'] ?? "https://github.com/{$repo}/releases/tag/{$latest}",
+        ], JSON_UNESCAPED_UNICODE);
+        return;
+    }
+
+    // --- 2. 回退：查最新 Commit ---
+    $commits = github_api("https://api.github.com/repos/{$repo}/commits?per_page=1");
+    if ($commits !== null && is_array($commits) && isset($commits[0])) {
+        $commit = $commits[0];
+        $sha = $commit['sha'] ?? '';
+        $shortSha = substr($sha, 0, 7);
+        $msg = $commit['commit']['message'] ?? '';
+        $date = $commit['commit']['author']['date'] ?? '';
+
+        echo json_encode([
+            'current_version'  => $currentVer,
+            'latest_version'   => $shortSha,
+            'has_update'       => null, // 无法仅凭 commit SHA 判断
+            'type'             => 'commit',
+            'commit_message'   => $msg,
+            'commit_date'      => $date,
+            'html_url'         => $commit['html_url'] ?? "https://github.com/{$repo}/commit/{$sha}",
+        ], JSON_UNESCAPED_UNICODE);
+        return;
+    }
+
+    // --- 3. 完全失败 ---
+    http_response_code(502);
+    echo json_encode(['error' => '无法获取 GitHub 仓库信息，请稍后重试'], JSON_UNESCAPED_UNICODE);
+}
+
+/**
+ * 调用 GitHub API（带 User-Agent 和 10s 超时）
+ */
+function github_api(string $url): ?array
+{
+    $ctx = stream_context_create([
+        'http' => [
+            'method'  => 'GET',
+            'header'  => "User-Agent: ip-probe\r\nAccept: application/vnd.github+json\r\n",
+            'timeout' => 10,
+        ],
+    ]);
+
+    $raw = @file_get_contents($url, false, $ctx);
+    if ($raw === false) return null;
+
+    $data = json_decode($raw, true);
+    if (json_last_error() !== JSON_ERROR_NONE) return null;
+
+    return $data;
+}
+
+/**
+ * do_update: 执行 git pull 拉取最新代码
+ *
+ * 需要管理权限。部署目录必须是 git 仓库。
+ */
+function handle_do_update(): void
+{
+    // 检查 exec 是否可用
+    $disabled = array_map('trim', explode(',', ini_get('disable_functions')));
+    if (in_array('exec', $disabled, true)) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'output' => 'exec() 已被禁用，无法执行 git pull。请手动 SSH 更新。'], JSON_UNESCAPED_UNICODE);
+        return;
+    }
+
+    $projectDir = __DIR__;
+    $output    = [];
+    $returnVal = 0;
+
+    // 先 fetch，再 pull（避免 stale ref 问题）
+    $cmd = sprintf(
+        'git -C %s fetch origin main 2>&1 && git -C %s reset --hard origin/main 2>&1',
+        escapeshellarg($projectDir),
+        escapeshellarg($projectDir)
+    );
+
+    exec($cmd, $output, $returnVal);
+
+    $lines = implode("\n", $output);
+
+    if ($returnVal !== 0) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'output' => $lines ?: 'git pull 执行失败'], JSON_UNESCAPED_UNICODE);
+        return;
+    }
+
+    // 更新成功：记录新版本号（如果有 git tag）
+    $newTag = [];
+    exec('git -C ' . escapeshellarg($projectDir) . ' describe --tags --abbrev=0 2>&1', $newTag);
+    $version = !empty($newTag[0]) ? $newTag[0] : APP_VERSION;
+
+    echo json_encode([
+        'success'  => true,
+        'output'   => $lines,
+        'version'  => $version,
+    ], JSON_UNESCAPED_UNICODE);
 }

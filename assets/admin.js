@@ -218,6 +218,124 @@
         }
     }
 
+    /* ====== 检查更新 ====== */
+
+    /**
+     * 检查 GitHub 仓库是否有新版本
+     * 由关于页面的按钮 onclick 调用
+     */
+    window.checkUpdate = function () {
+        var statusEl   = document.getElementById('update-status');
+        var linkEl     = document.getElementById('update-link');
+        var updateBtn  = document.getElementById('update-now-btn');
+        var btnEl      = document.getElementById('check-update-btn');
+
+        // 显示加载状态
+        statusEl.style.display    = 'block';
+        statusEl.style.background = 'var(--color-surface-input)';
+        statusEl.style.color      = 'var(--color-text-secondary)';
+        statusEl.innerHTML        = '正在检查更新...';
+        linkEl.style.display      = 'none';
+        updateBtn.style.display   = 'none';
+        btnEl.disabled            = true;
+
+        api('check_update').then(function (data) {
+            btnEl.disabled = false;
+
+            if (data.type === 'release') {
+                if (data.has_update) {
+                    statusEl.style.background = '#fff3cd';
+                    statusEl.style.color      = '#856404';
+                    statusEl.innerHTML =
+                        '<div style="font-weight:600;margin-bottom:4px;">发现新版本 ' + escHtml(data.latest_version) + '</div>' +
+                        '<div style="font-size:13px;">当前：' + escHtml(data.current_version) + ' → 最新：' + escHtml(data.latest_version) + '</div>' +
+                        '<div style="font-size:13px;margin-top:4px;color:var(--color-text-secondary);">发布于 ' + escHtml(data.published_at || '--') + '</div>';
+                    linkEl.style.display    = 'inline-flex';
+                    updateBtn.style.display = 'inline-flex';
+                    linkEl.href = data.html_url;
+                } else {
+                    statusEl.style.background = '#d4edda';
+                    statusEl.style.color      = '#155724';
+                    statusEl.innerHTML =
+                        '<div style="font-weight:600;">已是最新版本</div>' +
+                        '<div style="font-size:13px;margin-top:2px;">当前 ' + escHtml(data.current_version) + ' 与最新 Release 一致</div>';
+                    linkEl.style.display    = 'none';
+                    updateBtn.style.display = 'none';
+                }
+            } else if (data.type === 'commit') {
+                statusEl.style.background = 'var(--color-surface-input)';
+                statusEl.style.color      = 'var(--color-text-secondary)';
+                statusEl.innerHTML =
+                    '<div style="font-weight:600;">暂无 Release，显示最新提交</div>' +
+                    '<div style="font-size:13px;margin-top:2px;">' + escHtml(data.latest_version) + ' · ' + escHtml(data.commit_message) + '</div>' +
+                    '<div style="font-size:13px;margin-top:2px;">' + escHtml(data.commit_date || '--') + '</div>';
+                linkEl.style.display    = 'inline-flex';
+                updateBtn.style.display = 'none';
+                linkEl.href = data.html_url;
+            }
+        }).catch(function (err) {
+            btnEl.disabled = false;
+            statusEl.style.background = '#f8d7da';
+            statusEl.style.color      = '#721c24';
+            statusEl.innerHTML =
+                '<div style="font-weight:600;">检查失败</div>' +
+                '<div style="font-size:13px;margin-top:2px;">' + escHtml(err.message || '网络错误') + '</div>';
+            linkEl.style.display    = 'inline-flex';
+            updateBtn.style.display = 'none';
+            linkEl.href = 'https://github.com/YouzSpace/ip-probe';
+        });
+    };
+
+    /**
+     * 执行 git pull 拉取最新代码
+     * 由「立即更新」按钮 onclick 调用
+     */
+    window.doUpdate = function () {
+        var statusEl  = document.getElementById('update-status');
+        var btnEl     = document.getElementById('update-now-btn');
+        var linkEl    = document.getElementById('update-link');
+
+        if (!confirm('确定要立即更新吗？系统将自动拉取最新代码。')) return;
+
+        statusEl.style.background = 'var(--color-surface-input)';
+        statusEl.style.color      = 'var(--color-text-secondary)';
+        statusEl.innerHTML        = '正在拉取更新...';
+        btnEl.disabled            = true;
+        linkEl.style.display      = 'none';
+
+        api('do_update').then(function (data) {
+            if (data.success) {
+                statusEl.style.background = '#d4edda';
+                statusEl.style.color      = '#155724';
+                statusEl.innerHTML =
+                    '<div style="font-weight:600;">更新成功</div>' +
+                    '<div style="font-size:13px;margin-top:4px;">当前版本：' + escHtml(data.version) + '</div>';
+                btnEl.style.display = 'none';
+                toast('更新成功！', 'success');
+            } else {
+                statusEl.style.background = '#f8d7da';
+                statusEl.style.color      = '#721c24';
+                statusEl.innerHTML =
+                    '<div style="font-weight:600;">更新失败</div>' +
+                    '<div style="font-size:13px;margin-top:4px;white-space:pre-wrap;">' + escHtml(data.output || '未知错误') + '</div>';
+                btnEl.disabled = false;
+            }
+        }).catch(function (err) {
+            statusEl.style.background = '#f8d7da';
+            statusEl.style.color      = '#721c24';
+            statusEl.innerHTML =
+                '<div style="font-weight:600;">更新失败</div>' +
+                '<div style="font-size:13px;margin-top:2px;">' + escHtml(err.message || '网络错误') + '</div>';
+            btnEl.disabled = false;
+        });
+    };
+
+    function escHtml(str) {
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(str));
+        return div.innerHTML;
+    }
+
     /* ====== 仪表盘 ====== */
 
     function loadDashboard() {

@@ -401,6 +401,13 @@ a:hover { text-decoration: underline; }
 }
 .btn-danger:hover { background: rgba(255, 59, 48, 0.16); }
 
+/* Success（绿色，用于更新等正向操作） */
+.btn-success {
+    background: rgba(52, 199, 89, 0.08);
+    color: #34c759;
+}
+.btn-success:hover { background: rgba(52, 199, 89, 0.16); }
+
 /* Ghost */
 .btn-ghost {
     background: transparent;

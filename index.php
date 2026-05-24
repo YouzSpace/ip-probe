@@ -244,9 +244,38 @@ $isLoggedIn = is_logged_in();
                 <div class="card-title">系统信息</div>
                 <div class="group-list">
                     <div class="group-list-item"><span class="group-list-label">项目名称</span><span class="group-list-value">IP 探针系统</span></div>
-                    <div class="group-list-item"><span class="group-list-label">版本</span><span class="group-list-value">v1.0.0</span></div>
+                    <div class="group-list-item"><span class="group-list-label">版本</span><span class="group-list-value"><?php echo APP_VERSION; ?></span></div>
                     <div class="group-list-item"><span class="group-list-label">运行环境</span><span class="group-list-value">PHP + JSON 文件存储（无数据库）</span></div>
                     <div class="group-list-item"><span class="group-list-label">开发者</span><span class="group-list-value">数字柚子 · 小柚子</span></div>
+                </div>
+            </div>
+
+            <!-- 检查更新 -->
+            <div class="card" style="margin-bottom:20px;">
+                <div class="card-title">检查更新</div>
+                <div class="group-list">
+                    <div class="group-list-item">
+                        <span class="group-list-label">当前版本</span>
+                        <span class="group-list-value" style="font-family:var(--font-mono);"><?php echo APP_VERSION; ?></span>
+                    </div>
+                </div>
+                <div id="update-status" style="display:none;margin:12px 16px 16px;padding:12px 16px;border-radius:var(--radius-sm);font-size:14px;line-height:1.6;"></div>
+                <div style="padding:0 16px 16px;display:flex;justify-content:flex-end;">
+                    <button class="btn btn-primary" id="check-update-btn" onclick="checkUpdate()">
+                        <!-- Lucide: RefreshCw -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                        检查更新
+                    </button>
+                    <a id="update-link" href="https://github.com/YouzSpace/ip-probe" target="_blank" class="btn btn-ghost btn-sm" style="margin-left:8px;display:none;">
+                        <!-- Lucide: ExternalLink -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                        查看详情
+                    </a>
+                    <button class="btn btn-success btn-sm" id="update-now-btn" style="margin-left:8px;display:none;" onclick="doUpdate()">
+                        <!-- Lucide: Download -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        立即更新
+                    </button>
                 </div>
             </div>
 
