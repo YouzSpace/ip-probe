@@ -37,8 +37,20 @@ $isLoggedIn = is_logged_in();
 <!-- ====== 后台主体 ====== -->
 <div id="admin-panel" class="admin-wrapper" style="<?php echo $isLoggedIn ? '' : 'display:none'; ?>">
 
+    <!-- 移动端顶部栏 -->
+    <div class="mobile-topbar" id="mobile-topbar">
+        <button class="hamburger-btn" id="hamburger-btn" aria-label="菜单">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <span class="mobile-topbar-title">IP 探针</span>
+        <span></span>
+    </div>
+
+    <!-- 侧边栏遮罩（移动端） -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
     <!-- 侧边栏 -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <div class="sidebar-logo">
                 <!-- Lucide: Activity -->

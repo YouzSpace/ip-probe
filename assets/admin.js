@@ -941,10 +941,46 @@
         initCopyLinkBtn();
     }
 
+    /* ====== 汉堡菜单（移动端侧滑栏） ====== */
+
+    function initHamburger() {
+        var btn     = document.getElementById('hamburger-btn');
+        var sidebar = document.getElementById('sidebar');
+        var overlay = document.getElementById('sidebar-overlay');
+
+        function openSidebar() {
+            sidebar.classList.add('open');
+            overlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSidebar() {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        btn.addEventListener('click', function () {
+            if (sidebar.classList.contains('open')) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        });
+
+        overlay.addEventListener('click', closeSidebar);
+
+        // 导航点击后自动关闭侧滑栏
+        document.querySelectorAll('.sidebar-nav .nav-item, .sidebar-footer .nav-item').forEach(function (item) {
+            item.addEventListener('click', closeSidebar);
+        });
+    }
+
     /* ====== 初始化 ====== */
     function init() {
         initLogin();
         initRouter();
+        initHamburger();
         bindEvents();
 
         // 已登录时根据 hash 加载页面
