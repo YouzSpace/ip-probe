@@ -902,6 +902,131 @@ textarea.form-input {
     flex: 1;
 }
 
+/* ====== 个性化设置页 ====== */
+
+/* Toggle 开关 */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 51px;
+    height: 31px;
+    cursor: pointer;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: #E5E5EA;
+    border-radius: 15.5px;
+    transition: background 0.25s ease;
+}
+
+.toggle-slider::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 27px;
+    height: 27px;
+    background: #FFFFFF;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    transition: transform 0.25s ease;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background: var(--color-primary);
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+    transform: translateX(20px);
+}
+
+/* 主题颜色选择器 */
+.theme-colors {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 10px;
+    padding: 16px;
+}
+
+.theme-color-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 8px;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-input);
+    cursor: pointer;
+    transition: var(--transition-fast);
+    -webkit-tap-highlight-color: transparent;
+    position: relative;
+}
+
+.theme-color-btn:hover {
+    border-color: var(--color-text-secondary);
+}
+
+.theme-color-btn.active {
+    border-color: var(--c, var(--color-primary));
+    background: var(--color-primary-subtle, rgba(0,122,255,0.06));
+}
+
+.theme-color-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06);
+}
+
+.theme-color-name {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+}
+
+.theme-color-picker {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+}
+
+/* 强制汉堡模式（桌面端） */
+.force-hamburger .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+    will-change: transform;
+    z-index: 150;
+}
+
+.force-hamburger .sidebar.open {
+    transform: translateX(0);
+}
+
+.force-hamburger .mobile-topbar {
+    display: flex;
+}
+
+.force-hamburger .sidebar-overlay.active {
+    display: block;
+}
+
+.force-hamburger .main-content {
+    margin-left: 0 !important;
+    padding: 64px 24px 24px !important;
+}
+
 /* ====== 响应式 ====== */
 
 /* 移动端顶部栏（桌面端隐藏） */
@@ -965,27 +1090,30 @@ textarea.form-input {
 }
 
 @media (max-width: 768px) {
-    .mobile-topbar {
-        display: flex;
-    }
-
+    /* 正常模式：缩小侧边栏到图标模式 */
     .sidebar {
-        transform: translateX(-100%);
-        transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
-        will-change: transform;
+        width: 64px;
+        padding: 12px 8px;
     }
 
-    .sidebar.open {
-        transform: translateX(0);
+    .sidebar-logo span,
+    .nav-item span,
+    .sidebar-footer .nav-item span {
+        display: none;
     }
 
-    .sidebar-overlay.active {
-        display: block;
+    .sidebar-logo {
+        justify-content: center;
+    }
+
+    .nav-item {
+        justify-content: center;
+        padding: 10px;
     }
 
     .main-content {
-        margin-left: 0;
-        padding: 64px 16px 20px;
+        margin-left: 64px;
+        padding: 20px 16px;
     }
 
     .stats-grid {
@@ -994,6 +1122,45 @@ textarea.form-input {
 
     .chart-grid {
         grid-template-columns: 1fr;
+    }
+
+    /* 汉堡模式覆盖：移动端也用抽屉式侧滑栏 */
+    .force-hamburger .mobile-topbar {
+        display: flex;
+    }
+
+    .force-hamburger .sidebar {
+        width: 240px;
+        padding: 16px 12px;
+        transform: translateX(-100%);
+    }
+
+    .force-hamburger .sidebar.open {
+        transform: translateX(0);
+    }
+
+    .force-hamburger .sidebar-logo span,
+    .force-hamburger .nav-item span,
+    .force-hamburger .sidebar-footer .nav-item span {
+        display: inline;
+    }
+
+    .force-hamburger .sidebar-logo {
+        justify-content: flex-start;
+    }
+
+    .force-hamburger .nav-item {
+        justify-content: flex-start;
+        padding: 10px 12px;
+    }
+
+    .force-hamburger .sidebar-overlay.active {
+        display: block;
+    }
+
+    .force-hamburger .main-content {
+        margin-left: 0;
+        padding: 64px 16px 20px;
     }
 }
 

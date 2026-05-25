@@ -215,6 +215,7 @@
             case 'links':     loadLinks();     break;
             case 'records':   currentPageNum = 1; loadRecords(1); break;
             case 'about':     /* 静态页面，无需加载数据 */ break;
+            case 'settings':  loadSettings(); break;
         }
     }
 
@@ -941,6 +942,206 @@
         initCopyLinkBtn();
     }
 
+    /* ====== 个性化设置 ====== */
+
+    var SETTINGS_KEY = 'ip_probe_settings';
+    var defaultSettings = { navMode: 'normal', themeColor: '#007AFF' };
+
+    function getSettings() {
+        try {
+            var saved = localStorage.getItem(SETTINGS_KEY);
+            if (saved) {
+                var parsed = JSON.parse(saved);
+                // 合并默认值，防止缺失字段
+                for (var k in defaultSettings) {
+                    if (!(k in parsed)) parsed[k] = defaultSettings[k];
+                }
+                return parsed;
+            }
+        } catch (e) { /* ignore */ }
+        return { navMode: 'normal', themeColor: '#007AFF' };
+    }
+
+    function saveSettings(settings) {
+        try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (e) { /* ignore */ }
+    }
+
+    /**
+     * 应用主题色
+     * @param {string} color - HEX 颜色值
+     */
+    function applyThemeColor(color) {
+        var r = parseInt(color.slice(1, 3), 16) / 255;
+        var g = parseInt(color.slice(3, 5), 16) / 255;
+        var b = parseInt(color.slice(5, 7), 16) / 255;
+        var root = document.documentElement;
+        root.style.setProperty('--color-primary', color);
+        // hover 略深
+        root.style.setProperty('--color-primary-hover', adjustBrightness(color, -15));
+        root.style.setProperty('--color-primary-active', adjustBrightness(color, -25));
+        // subtle 背景
+        root.style.setProperty('--color-primary-subtle', 'rgba(' +
+            Math.round(r * 255) + ',' + Math.round(g * 255) + ',' + Math.round(b * 255) + ',0.06)');
+    }
+
+    /**
+     * 简易亮度调整
+     * @param {string} hex
+     * @param {number} percent - 正值变亮，负值变暗
+     * @returns {string}
+     */
+    function adjustBrightness(hex, percent) {
+        var num = parseInt(hex.slice(1), 16);
+        var r = Math.min(255, Math.max(0, (num >> 16) + percent));
+        var g = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + percent));
+        var b = Math.min(255, Math.max(0, (num & 0x0000FF) + percent));
+        return '#' + (0x1000000 + (r << 16) + (g << 8) + b).toString(16).slice(1);
+    }
+
+    /**
+     * 应用导航模式
+     * @param {string} mode - 'normal' | 'hamburger'
+     */
+    function applyNavMode(mode) {
+        var wrapper = document.getElementById('admin-panel');
+        var sidebar = document.getElementById('sidebar');
+        var overlay = document.getElementById('sidebar-overlay');
+
+        // 先关闭 sidebar（无论切换到哪个模式）
+        sidebar.classList.remove('open');
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+
+        if (mode === 'hamburger') {
+            wrapper.classList.add('force-hamburger');
+        } else {
+            wrapper.classList.remove('force-hamburger');
+        }
+    }
+
+    /**
+     * 加载设置页面
+     */
+    function loadSettings() {
+        var settings = getSettings();
+
+        // 导航模式 toggle
+        var navToggle = document.getElementById('setting-nav-mode');
+        if (navToggle) {
+            navToggle.checked = (settings.navMode === 'hamburger');
+        }
+
+        // 主题颜色高亮
+        updateColorBtnActive(settings.themeColor);
+
+        // 自定义颜色 picker
+        var picker = document.getElementById('custom-color-picker');
+        if (picker) {
+            picker.value = settings.themeColor;
+        }
+    }
+
+    /**
+     * 更新颜色按钮的 active 状态
+     * @param {string} color
+     */
+    function updateColorBtnActive(color) {
+        document.querySelectorAll('.theme-color-btn').forEach(function (btn) {
+            var btnColor = btn.getAttribute('data-color');
+            btn.classList.toggle('active', btnColor === color);
+        });
+    }
+
+    /**
+     * 初始化设置页面事件
+     */
+    function initSettings() {
+        // 导航模式切换
+        var navToggle = document.getElementById('setting-nav-mode');
+        if (navToggle) {
+            navToggle.addEventListener('change', function () {
+                var mode = navToggle.checked ? 'hamburger' : 'normal';
+                var settings = getSettings();
+                settings.navMode = mode;
+                saveSettings(settings);
+                applyNavMode(mode);
+                toast(mode === 'hamburger' ? '已切换为汉堡菜单' : '已切换为正常导航栏', 'success');
+            });
+        }
+
+        // 预设颜色按钮
+        document.querySelectorAll('.theme-color-btn[data-color]').forEach(function (btn) {
+            var color = btn.getAttribute('data-color');
+            if (color === 'custom') return; // 自定义按钮单独处理
+
+            btn.addEventListener('click', function () {
+                var settings = getSettings();
+                settings.themeColor = color;
+                saveSettings(settings);
+                applyThemeColor(color);
+                updateColorBtnActive(color);
+            });
+        });
+
+        // 自定义颜色选择器
+        var customBtn = document.querySelector('.theme-color-btn[data-color="custom"]');
+        var customPicker = document.getElementById('custom-color-picker');
+        if (customBtn && customPicker) {
+            // 点击按钮触发 picker
+            customBtn.addEventListener('click', function (e) {
+                if (e.target !== customPicker) {
+                    customPicker.click();
+                }
+            });
+
+            customPicker.addEventListener('input', function () {
+                var color = customPicker.value;
+                var settings = getSettings();
+                settings.themeColor = color;
+                saveSettings(settings);
+                applyThemeColor(color);
+                updateColorBtnActive(color);
+
+                // 更新自定义按钮的 dot 颜色
+                var dot = customBtn.querySelector('.theme-color-dot');
+                if (dot) dot.style.background = color;
+            });
+
+            customPicker.addEventListener('change', function () {
+                toast('已应用自定义颜色', 'success');
+            });
+        }
+
+        // 重置按钮
+        var resetBtn = document.getElementById('reset-settings-btn');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', function () {
+                confirmDialog('确定要恢复所有默认设置吗？').then(function (ok) {
+                    if (!ok) return;
+                    localStorage.removeItem(SETTINGS_KEY);
+                    applyThemeColor(defaultSettings.themeColor);
+                    applyNavMode(defaultSettings.navMode);
+                    loadSettings();
+
+                    // 重置自定义按钮 dot
+                    var dot = document.querySelector('.theme-color-btn[data-color="custom"] .theme-color-dot');
+                    if (dot) dot.style.background = 'conic-gradient(#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)';
+
+                    toast('已恢复默认设置', 'success');
+                });
+            });
+        }
+    }
+
+    /**
+     * 启动时应用已保存的设置
+     */
+    function applySavedSettings() {
+        var settings = getSettings();
+        applyThemeColor(settings.themeColor);
+        applyNavMode(settings.navMode);
+    }
+
     /* ====== 汉堡菜单（移动端侧滑栏） ====== */
 
     function initHamburger() {
@@ -978,9 +1179,11 @@
 
     /* ====== 初始化 ====== */
     function init() {
+        applySavedSettings();
         initLogin();
         initRouter();
         initHamburger();
+        initSettings();
         bindEvents();
 
         // 已登录时根据 hash 加载页面

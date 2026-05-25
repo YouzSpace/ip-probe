@@ -80,6 +80,11 @@ $isLoggedIn = is_logged_in();
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
                 <span>关于</span>
             </button>
+            <button class="nav-item" data-page="settings">
+                <!-- Lucide: Settings -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                <span>个性化</span>
+            </button>
         </nav>
 
         <div class="sidebar-footer">
@@ -333,6 +338,87 @@ $isLoggedIn = is_logged_in();
                     <div class="group-list-item"><span class="group-list-label">links.json</span><span class="group-list-value">采集链接配置</span></div>
                     <div class="group-list-item"><span class="group-list-label">.password_hash</span><span class="group-list-value">管理员密码哈希（bcrypt）</span></div>
                     <div class="group-list-item"><span class="group-list-label">.htaccess</span><span class="group-list-value">阻止 data/ 目录直接访问</span></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ====== 个性化页面 ====== -->
+        <section id="page-settings" class="page-section">
+            <h1 class="page-title">个性化</h1>
+            <p class="page-desc">自定义导航栏样式和主题颜色</p>
+
+            <!-- 导航模式 -->
+            <div class="card" style="margin-bottom:20px;">
+                <div class="card-title">导航模式</div>
+                <div class="group-list">
+                    <div class="group-list-item">
+                        <span class="group-list-label">
+                            <div style="font-weight:500;">汉堡菜单</div>
+                            <div style="font-size:12px;color:var(--color-text-secondary);margin-top:2px;">所有尺寸均使用抽屉式侧滑栏</div>
+                        </span>
+                        <span class="group-list-value">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="setting-nav-mode">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 主题颜色 -->
+            <div class="card" style="margin-bottom:20px;">
+                <div class="card-title">主题颜色</div>
+                <div class="theme-colors" id="theme-colors">
+                    <button class="theme-color-btn active" data-color="#007AFF" style="--c:#007AFF;" title="默认蓝">
+                        <span class="theme-color-dot" style="background:#007AFF;"></span>
+                        <span class="theme-color-name">默认蓝</span>
+                    </button>
+                    <button class="theme-color-btn" data-color="#5856D6" style="--c:#5856D6;" title="靛紫">
+                        <span class="theme-color-dot" style="background:#5856D6;"></span>
+                        <span class="theme-color-name">靛紫</span>
+                    </button>
+                    <button class="theme-color-btn" data-color="#AF52DE" style="--c:#AF52DE;" title="紫罗兰">
+                        <span class="theme-color-dot" style="background:#AF52DE;"></span>
+                        <span class="theme-color-name">紫罗兰</span>
+                    </button>
+                    <button class="theme-color-btn" data-color="#FF2D55" style="--c:#FF2D55;" title="玫红">
+                        <span class="theme-color-dot" style="background:#FF2D55;"></span>
+                        <span class="theme-color-name">玫红</span>
+                    </button>
+                    <button class="theme-color-btn" data-color="#FF9500" style="--c:#FF9500;" title="橙色">
+                        <span class="theme-color-dot" style="background:#FF9500;"></span>
+                        <span class="theme-color-name">橙色</span>
+                    </button>
+                    <button class="theme-color-btn" data-color="#34C759" style="--c:#34C759;" title="绿色">
+                        <span class="theme-color-dot" style="background:#34C759;"></span>
+                        <span class="theme-color-name">绿色</span>
+                    </button>
+                    <button class="theme-color-btn" data-color="#00C7BE" style="--c:#00C7BE;" title="青色">
+                        <span class="theme-color-dot" style="background:#00C7BE;"></span>
+                        <span class="theme-color-name">青色</span>
+                    </button>
+                    <button class="theme-color-btn" data-color="custom" style="--c:#000;" title="自定义">
+                        <span class="theme-color-dot" style="background:conic-gradient(#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00);"></span>
+                        <span class="theme-color-name">自定义</span>
+                        <input type="color" class="theme-color-picker" id="custom-color-picker" value="#007AFF">
+                    </button>
+                </div>
+            </div>
+
+            <!-- 重置 -->
+            <div class="card">
+                <div class="card-title">重置</div>
+                <div class="group-list">
+                    <div class="group-list-item">
+                        <span class="group-list-label">
+                            <div style="font-weight:500;">恢复默认设置</div>
+                            <div style="font-size:12px;color:var(--color-text-secondary);margin-top:2px;">清除所有个性化配置</div>
+                        </span>
+                        <span class="group-list-value">
+                            <button class="btn btn-ghost btn-sm" id="reset-settings-btn">重置</button>
+                        </span>
+                    </div>
                 </div>
             </div>
         </section>
