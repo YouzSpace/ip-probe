@@ -25,12 +25,25 @@ $isLoggedIn = is_logged_in();
 <div id="login-panel" class="login-panel" style="<?php echo $isLoggedIn ? 'display:none' : ''; ?>">
     <div class="login-card">
         <h2>IP 探针系统</h2>
-        <p class="text-secondary">请输入管理密码</p>
-        <div class="form-group">
-            <input type="password" id="login-password" class="form-input" placeholder="密码" autocomplete="off">
+        <!-- Step 1: 密码 -->
+        <div id="login-step-password">
+            <p class="text-secondary">请输入管理密码</p>
+            <div class="form-group">
+                <input type="password" id="login-password" class="form-input" placeholder="密码" autocomplete="off">
+            </div>
+            <div id="login-error" style="display:none;color:var(--color-danger);font-size:13px;margin-bottom:12px;"></div>
+            <button class="btn btn-primary btn-lg" id="login-btn">登 录</button>
         </div>
-        <div id="login-error" style="display:none;color:var(--color-danger);font-size:13px;margin-bottom:12px;"></div>
-        <button class="btn btn-primary btn-lg" id="login-btn">登 录</button>
+        <!-- Step 2: 2FA 验证码 -->
+        <div id="login-step-2fa" style="display:none;">
+            <p class="text-secondary">请输入 Google Authenticator 验证码</p>
+            <div class="form-group">
+                <input type="text" id="login-2fa-code" class="form-input" placeholder="6 位验证码" autocomplete="off" maxlength="6" inputmode="numeric" pattern="[0-9]*" style="text-align:center;font-size:24px;letter-spacing:8px;">
+            </div>
+            <div id="login-2fa-error" style="display:none;color:var(--color-danger);font-size:13px;margin-bottom:12px;"></div>
+            <button class="btn btn-primary btn-lg" id="login-2fa-btn">验 证</button>
+            <button class="btn btn-ghost btn-sm" id="login-back-btn" style="margin-top:8px;">返回重新输入密码</button>
+        </div>
     </div>
 </div>
 
@@ -75,15 +88,20 @@ $isLoggedIn = is_logged_in();
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
                 <span>采集记录</span>
             </button>
-            <button class="nav-item" data-page="about">
-                <!-- Lucide: Info -->
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                <span>关于</span>
+            <button class="nav-item" data-page="checkins">
+                <!-- Lucide: ClipboardCheck -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 14l2 2 4-4"/></svg>
+                <span>签到管理</span>
             </button>
             <button class="nav-item" data-page="settings">
                 <!-- Lucide: Settings -->
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                 <span>个性化</span>
+            </button>
+            <button class="nav-item" data-page="about">
+                <!-- Lucide: Info -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                <span>关于</span>
             </button>
         </nav>
 
@@ -251,6 +269,118 @@ $isLoggedIn = is_logged_in();
             </div>
         </section>
 
+        <!-- ====== 签到管理页面 ====== -->
+        <section id="page-checkins" class="page-section">
+            <h1 class="page-title">签到管理</h1>
+            <p class="page-desc">创建签到链接，查看签到记录</p>
+
+            <!-- 创建签到链接 -->
+            <div class="card" style="margin-bottom:20px;">
+                <div class="card-title">创建签到链接</div>
+                <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+                    <div class="form-group" style="flex:1;min-width:200px;margin-bottom:0;">
+                        <label class="form-label">备注（可选）</label>
+                        <input type="text" id="checkin-remark" class="form-input" placeholder="签到链接备注名称">
+                    </div>
+                    <button class="btn btn-primary" id="create-checkin-btn" style="height:fit-content;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        生成签到链接
+                    </button>
+                </div>
+                <!-- 创建成功后的链接展示 -->
+                <div id="checkin-created" style="display:none;margin-top:16px;padding:12px 16px;background:var(--color-surface-input);border-radius:var(--radius-sm);font-size:14px;">
+                    <span style="color:var(--color-text-secondary);">签到链接已创建：</span>
+                    <code id="checkin-created-url" style="user-select:all;color:var(--color-primary);"></code>
+                    <button class="btn btn-ghost btn-sm" id="copy-checkin-btn" style="margin-left:8px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        复制
+                    </button>
+                </div>
+            </div>
+
+            <!-- 签到统计 -->
+            <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px;">
+                <div class="stat-card">
+                    <div class="stat-label">签到链接数</div>
+                    <div class="stat-value" id="checkin-stat-links">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">总签到次数</div>
+                    <div class="stat-value" id="checkin-stat-total">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">今日签到</div>
+                    <div class="stat-value" id="checkin-stat-today">--</div>
+                </div>
+            </div>
+
+            <!-- 签到链接列表 -->
+            <div class="card" style="padding:0;overflow:hidden;margin-bottom:20px;">
+                <div style="padding:16px 20px;border-bottom:1px solid var(--color-separator);">
+                    <div class="card-title" style="margin-bottom:0;">签到链接列表</div>
+                </div>
+                <div id="checkin-links-list">
+                    <!-- JS 动态填充 -->
+                </div>
+                <div id="checkin-links-empty" class="empty-state" style="display:none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 14l2 2 4-4"/></svg>
+                    <p>暂无签到链接，点击上方「生成签到链接」开始</p>
+                </div>
+            </div>
+
+            <!-- 签到记录 -->
+            <div class="card" style="padding:0;overflow:hidden;">
+                <div style="padding:16px 20px;border-bottom:1px solid var(--color-separator);display:flex;justify-content:space-between;align-items:center;">
+                    <div class="card-title" style="margin-bottom:0;">签到记录</div>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <div class="search-bar">
+                            <div class="search-input-wrapper">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                <input type="text" id="checkin-search-input" class="form-input" placeholder="搜索 IP、城市...">
+                            </div>
+                        </div>
+                        <button class="btn btn-danger btn-sm" id="checkin-batch-delete-btn" style="display:none;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            删除 (<span id="checkin-selected-count">0</span>)
+                        </button>
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                    <table class="data-table" id="checkin-records-table">
+                        <thead>
+                            <tr>
+                                <th style="width:36px;"><input type="checkbox" id="checkin-select-all"></th>
+                                <th>IPv4</th>
+                                <th>IPv6</th>
+                                <th>操作系统</th>
+                                <th>浏览器</th>
+                                <th>城市</th>
+                                <th>签到时间</th>
+                            </tr>
+                        </thead>
+                        <tbody id="checkin-records-tbody">
+                            <!-- JS 动态填充 -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="checkin-records-empty" class="empty-state" style="display:none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    <p>暂无签到记录</p>
+                </div>
+            </div>
+
+            <!-- 分页 -->
+            <div class="pagination" id="checkin-pagination">
+                <button class="btn btn-ghost btn-sm" id="checkin-page-prev">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <span class="page-info" id="checkin-page-info">第 1 页</span>
+                <button class="btn btn-ghost btn-sm" id="checkin-page-next">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+            </div>
+        </section>
+
         <!-- ====== 关于页面 ====== -->
         <section id="page-about" class="page-section">
             <h1 class="page-title">关于</h1>
@@ -346,6 +476,90 @@ $isLoggedIn = is_logged_in();
         <section id="page-settings" class="page-section">
             <h1 class="page-title">个性化</h1>
             <p class="page-desc">自定义导航栏样式和主题颜色</p>
+
+            <!-- 两步验证 -->
+            <div class="card" style="margin-bottom:20px;">
+                <div class="card-title">修改密码</div>
+                <div class="group-list">
+                    <div class="group-list-item">
+                        <span class="group-list-label">
+                            <div style="font-weight:500;">登录密码</div>
+                            <div style="font-size:12px;color:var(--color-text-secondary);margin-top:2px;">修改后需重新登录</div>
+                        </span>
+                        <span class="group-list-value">
+                            <button class="btn btn-primary btn-sm" id="change-pwd-btn">修改密码</button>
+                        </span>
+                    </div>
+                </div>
+                <div id="change-pwd-area" style="display:none;padding:16px;">
+                    <div class="form-group">
+                        <label class="form-label">当前密码</label>
+                        <input type="password" id="change-pwd-old" class="form-input" placeholder="输入当前密码">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">新密码</label>
+                        <input type="password" id="change-pwd-new" class="form-input" placeholder="输入新密码">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">确认新密码</label>
+                        <input type="password" id="change-pwd-confirm" class="form-input" placeholder="再次输入新密码">
+                    </div>
+                    <div id="change-pwd-error" style="display:none;color:var(--color-danger);font-size:13px;margin-bottom:12px;"></div>
+                    <div style="display:flex;gap:8px;">
+                        <button class="btn btn-primary" id="change-pwd-submit">确认修改</button>
+                        <button class="btn btn-ghost" id="change-pwd-cancel">取消</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 两步验证 -->
+            <div class="card" style="margin-bottom:20px;">
+                <div class="card-title">两步验证（Google Authenticator）</div>
+                <div class="group-list">
+                    <div class="group-list-item">
+                        <span class="group-list-label">
+                            <div style="font-weight:500;">验证状态</div>
+                            <div style="font-size:12px;color:var(--color-text-secondary);margin-top:2px;" id="twofa-status-text">检测中...</div>
+                        </span>
+                        <span class="group-list-value">
+                            <button class="btn btn-primary btn-sm" id="twofa-setup-btn" style="display:none;">启用</button>
+                            <button class="btn btn-danger btn-sm" id="twofa-disable-btn" style="display:none;">关闭</button>
+                        </span>
+                    </div>
+                </div>
+                <!-- 2FA 设置区域 -->
+                <div id="twofa-setup-area" style="display:none;padding:16px;">
+                    <div style="text-align:center;margin-bottom:16px;">
+                        <p style="font-size:14px;color:var(--color-text-secondary);margin-bottom:12px;">使用 Google Authenticator 扫描二维码</p>
+                        <img id="twofa-qr" src="" alt="QR Code" style="width:200px;height:200px;border-radius:8px;border:1px solid var(--color-border);">
+                        <div style="margin-top:8px;">
+                            <span style="font-size:12px;color:var(--color-text-secondary);">密钥：</span>
+                            <code id="twofa-secret-display" style="font-size:13px;letter-spacing:1px;user-select:all;"></code>
+                        </div>
+                    </div>
+                    <div class="form-group" style="max-width:200px;margin:0 auto;">
+                        <label class="form-label">输入 6 位验证码确认</label>
+                        <input type="text" id="twofa-verify-code" class="form-input" placeholder="000000" maxlength="6" inputmode="numeric" pattern="[0-9]*" style="text-align:center;font-size:20px;letter-spacing:6px;">
+                    </div>
+                    <div id="twofa-verify-error" style="display:none;color:var(--color-danger);font-size:13px;text-align:center;margin-top:8px;"></div>
+                    <div style="text-align:center;margin-top:12px;">
+                        <button class="btn btn-primary" id="twofa-verify-btn">确认启用</button>
+                        <button class="btn btn-ghost" id="twofa-cancel-btn" style="margin-left:8px;">取消</button>
+                    </div>
+                </div>
+                <!-- 2FA 关闭确认 -->
+                <div id="twofa-disable-area" style="display:none;padding:16px;">
+                    <div class="form-group" style="max-width:280px;margin:0 auto;">
+                        <label class="form-label">请输入密码确认关闭两步验证</label>
+                        <input type="password" id="twofa-disable-password" class="form-input" placeholder="管理密码">
+                    </div>
+                    <div id="twofa-disable-error" style="display:none;color:var(--color-danger);font-size:13px;text-align:center;margin-top:8px;"></div>
+                    <div style="text-align:center;margin-top:12px;">
+                        <button class="btn btn-danger" id="twofa-confirm-disable-btn">确认关闭</button>
+                        <button class="btn btn-ghost" id="twofa-cancel-disable-btn" style="margin-left:8px;">取消</button>
+                    </div>
+                </div>
+            </div>
 
             <!-- 导航模式 -->
             <div class="card" style="margin-bottom:20px;">
@@ -458,6 +672,12 @@ $isLoggedIn = is_logged_in();
 
 <!-- 第三方脚本 -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script>
+    // Chart.js 加载检查
+    if (typeof Chart === 'undefined') {
+        console.warn('Chart.js CDN 加载失败，图表功能不可用');
+    }
+</script>
 <script>
     // Lucide 图标初始化（如果 Lucide 可用）
     if (typeof lucide !== 'undefined') {

@@ -22,7 +22,7 @@
      * @returns {Promise<object>}
      */
     function api(action, options) {
-        var url = (window.SITE_URL || '') + '/api.php?action=' + encodeURIComponent(action);
+        var url = (window.SITE_URL || '') + '/api.php?action=' + action;
         return fetch(url, options || {})
             .then(function (resp) {
                 if (!resp.ok) throw new Error('HTTP ' + resp.status);
@@ -128,30 +128,42 @@
     /* ====== 登录 ====== */
 
     function initLogin() {
-        var pwdInput  = document.getElementById('login-password');
-        var loginBtn  = document.getElementById('login-btn');
-        var errorDiv  = document.getElementById('login-error');
+        var pwdInput   = document.getElementById('login-password');
+        var loginBtn   = document.getElementById('login-btn');
+        var errorDiv   = document.getElementById('login-error');
+        var stepPwd    = document.getElementById('login-step-password');
+        var step2fa    = document.getElementById('login-step-2fa');
+        var codeInput  = document.getElementById('login-2fa-code');
+        var verifyBtn  = document.getElementById('login-2fa-btn');
+        var backBtn    = document.getElementById('login-back-btn');
+        var error2fa   = document.getElementById('login-2fa-error');
 
+        // Step 1: 密码验证
         loginBtn.addEventListener('click', function () {
             var pwd = pwdInput.value;
             if (!pwd) { errorDiv.textContent = '请输入密码'; errorDiv.style.display = 'block'; return; }
 
             loginBtn.disabled = true;
             loginBtn.textContent = '登录中…';
+            errorDiv.style.display = 'none';
 
             api('login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ password: pwd })
-            }).then(function () {
-                document.getElementById('login-panel').style.display = 'none';
-                document.getElementById('admin-panel').style.display = '';
-                // 登录后加载当前 hash 页面
-                var hash = location.hash.replace('#', '') || 'dashboard';
-                navigateTo(hash);
-                toast('登录成功', 'success');
+            }).then(function (data) {
+                if (data.need_2fa) {
+                    // 需要 2FA：切换到验证码输入
+                    stepPwd.style.display = 'none';
+                    step2fa.style.display = '';
+                    codeInput.value = '';
+                    codeInput.focus();
+                } else {
+                    // 直接登录成功
+                    onLoginSuccess();
+                }
             }).catch(function (err) {
-                errorDiv.textContent = '密码错误：' + err.message;
+                errorDiv.textContent = err.message || '密码错误';
                 errorDiv.style.display = 'block';
             }).finally(function () {
                 loginBtn.disabled = false;
@@ -164,12 +176,60 @@
             if (e.key === 'Enter') loginBtn.click();
         });
 
+        // Step 2: 2FA 验证
+        verifyBtn.addEventListener('click', function () {
+            var code = codeInput.value.trim();
+            if (!code || code.length !== 6) { error2fa.textContent = '请输入 6 位验证码'; error2fa.style.display = 'block'; return; }
+
+            verifyBtn.disabled = true;
+            verifyBtn.textContent = '验证中…';
+            error2fa.style.display = 'none';
+
+            api('login_2fa', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: code })
+            }).then(function () {
+                onLoginSuccess();
+            }).catch(function (err) {
+                error2fa.textContent = err.message || '验证码错误';
+                error2fa.style.display = 'block';
+                codeInput.value = '';
+                codeInput.focus();
+            }).finally(function () {
+                verifyBtn.disabled = false;
+                verifyBtn.textContent = '验 证';
+            });
+        });
+
+        // 验证码回车
+        codeInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') verifyBtn.click();
+        });
+
+        // 返回密码输入
+        backBtn.addEventListener('click', function () {
+            step2fa.style.display = 'none';
+            stepPwd.style.display = '';
+            pwdInput.value = '';
+            pwdInput.focus();
+        });
+
         // 退出登录
         document.getElementById('logout-btn').addEventListener('click', function () {
             api('logout', { method: 'POST' }).then(function () {
                 location.reload();
             });
         });
+    }
+
+    /** 登录成功后的通用初始化 */
+    function onLoginSuccess() {
+        document.getElementById('login-panel').style.display = 'none';
+        document.getElementById('admin-panel').style.display = '';
+        var hash = location.hash.replace('#', '') || 'dashboard';
+        navigateTo(hash);
+        toast('登录成功', 'success');
     }
 
     /* ====== SPA 路由 ====== */
@@ -214,6 +274,7 @@
             case 'dashboard': loadDashboard(); break;
             case 'links':     loadLinks();     break;
             case 'records':   currentPageNum = 1; loadRecords(1); break;
+            case 'checkins':  loadCheckins(); break;
             case 'about':     /* 静态页面，无需加载数据 */ break;
             case 'settings':  loadSettings(); break;
         }
@@ -248,9 +309,9 @@
                     statusEl.style.background = '#fff3cd';
                     statusEl.style.color      = '#856404';
                     statusEl.innerHTML =
-                        '<div style="font-weight:600;margin-bottom:4px;">发现新版本 ' + escHtml(data.latest_version) + '</div>' +
-                        '<div style="font-size:13px;">当前：' + escHtml(data.current_version) + ' → 最新：' + escHtml(data.latest_version) + '</div>' +
-                        '<div style="font-size:13px;margin-top:4px;color:var(--color-text-secondary);">发布于 ' + escHtml(data.published_at || '--') + '</div>';
+                        '<div style="font-weight:600;margin-bottom:4px;">发现新版本 ' + escapeHtml(data.latest_version) + '</div>' +
+                        '<div style="font-size:13px;">当前：' + escapeHtml(data.current_version) + ' → 最新：' + escapeHtml(data.latest_version) + '</div>' +
+                        '<div style="font-size:13px;margin-top:4px;color:var(--color-text-secondary);">发布于 ' + escapeHtml(data.published_at || '--') + '</div>';
                     linkEl.style.display    = 'inline-flex';
                     updateBtn.style.display = 'inline-flex';
                     linkEl.href = data.html_url;
@@ -259,7 +320,7 @@
                     statusEl.style.color      = '#155724';
                     statusEl.innerHTML =
                         '<div style="font-weight:600;">已是最新版本</div>' +
-                        '<div style="font-size:13px;margin-top:2px;">当前 ' + escHtml(data.current_version) + ' 与最新 Release 一致</div>';
+                        '<div style="font-size:13px;margin-top:2px;">当前 ' + escapeHtml(data.current_version) + ' 与最新 Release 一致</div>';
                     linkEl.style.display    = 'none';
                     updateBtn.style.display = 'none';
                 }
@@ -268,8 +329,8 @@
                 statusEl.style.color      = 'var(--color-text-secondary)';
                 statusEl.innerHTML =
                     '<div style="font-weight:600;">暂无 Release，显示最新提交</div>' +
-                    '<div style="font-size:13px;margin-top:2px;">' + escHtml(data.latest_version) + ' · ' + escHtml(data.commit_message) + '</div>' +
-                    '<div style="font-size:13px;margin-top:2px;">' + escHtml(data.commit_date || '--') + '</div>';
+                    '<div style="font-size:13px;margin-top:2px;">' + escapeHtml(data.latest_version) + ' · ' + escapeHtml(data.commit_message) + '</div>' +
+                    '<div style="font-size:13px;margin-top:2px;">' + escapeHtml(data.commit_date || '--') + '</div>';
                 linkEl.style.display    = 'inline-flex';
                 updateBtn.style.display = 'none';
                 linkEl.href = data.html_url;
@@ -280,7 +341,7 @@
             statusEl.style.color      = '#721c24';
             statusEl.innerHTML =
                 '<div style="font-weight:600;">检查失败</div>' +
-                '<div style="font-size:13px;margin-top:2px;">' + escHtml(err.message || '网络错误') + '</div>';
+                '<div style="font-size:13px;margin-top:2px;">' + escapeHtml(err.message || '网络错误') + '</div>';
             linkEl.style.display    = 'inline-flex';
             updateBtn.style.display = 'none';
             linkEl.href = 'https://github.com/YouzSpace/ip-probe';
@@ -310,7 +371,7 @@
                 statusEl.style.color      = '#155724';
                 statusEl.innerHTML =
                     '<div style="font-weight:600;">更新成功</div>' +
-                    '<div style="font-size:13px;margin-top:4px;">当前版本：' + escHtml(data.version) + '</div>';
+                    '<div style="font-size:13px;margin-top:4px;">当前版本：' + escapeHtml(data.version) + '</div>';
                 btnEl.style.display = 'none';
                 toast('更新成功！', 'success');
             } else {
@@ -318,7 +379,7 @@
                 statusEl.style.color      = '#721c24';
                 statusEl.innerHTML =
                     '<div style="font-weight:600;">更新失败</div>' +
-                    '<div style="font-size:13px;margin-top:4px;white-space:pre-wrap;">' + escHtml(data.output || '未知错误') + '</div>';
+                    '<div style="font-size:13px;margin-top:4px;white-space:pre-wrap;">' + escapeHtml(data.output || '未知错误') + '</div>';
                 btnEl.disabled = false;
             }
         }).catch(function (err) {
@@ -326,15 +387,18 @@
             statusEl.style.color      = '#721c24';
             statusEl.innerHTML =
                 '<div style="font-weight:600;">更新失败</div>' +
-                '<div style="font-size:13px;margin-top:2px;">' + escHtml(err.message || '网络错误') + '</div>';
+                '<div style="font-size:13px;margin-top:2px;">' + escapeHtml(err.message || '网络错误') + '</div>';
             btnEl.disabled = false;
         });
     };
 
-    function escHtml(str) {
-        var div = document.createElement('div');
-        div.appendChild(document.createTextNode(str));
-        return div.innerHTML;
+    function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
     }
 
     /* ====== 仪表盘 ====== */
@@ -350,6 +414,12 @@
             renderCharts(stats);
         }).catch(function (err) {
             console.error('加载仪表盘失败：', err);
+            // 显示 0 而非 --
+            document.getElementById('stat-total').textContent  = '0';
+            document.getElementById('stat-today').textContent  = '0';
+            document.getElementById('stat-links').textContent  = '0';
+            document.getElementById('stat-week').textContent   = '0';
+            toast('仪表盘加载失败：' + (err.message || '未知错误'), 'danger');
         });
     }
 
@@ -358,6 +428,11 @@
      * @param {object} stats - get_stats 返回数据
      */
     function renderCharts(stats) {
+        if (typeof Chart === 'undefined') {
+            console.warn('Chart.js 未加载，跳过图表渲染');
+            return;
+        }
+
         // 销毁旧图表
         Object.keys(charts).forEach(function (key) {
             if (charts[key]) { charts[key].destroy(); charts[key] = null; }
@@ -623,10 +698,11 @@
         }).then(function (data) {
             if (data.error) throw new Error(data.error);
             renderRecords(data.records || []);
-            renderPagination(data.total || 0, page, data.limit || 20);
+            renderPagination(data.total || 0, page, 20);
             updateBatchDeleteBtn();
         }).catch(function (err) {
             console.error('加载记录失败：', err);
+            toast('加载记录失败：' + (err.message || '未知错误'), 'danger');
         });
     }
 
@@ -940,6 +1016,405 @@
 
         // 创建链接后复制按钮
         initCopyLinkBtn();
+
+        // 签到管理事件
+        initCheckinEvents();
+    }
+
+    /* ====== 签到管理 ====== */
+
+    var checkinPageNum = 1;
+
+    /**
+     * 加载签到管理页面数据
+     */
+    function loadCheckins() {
+        loadCheckinStats();
+        loadCheckinLinks();
+        checkinPageNum = 1;
+        loadCheckinRecords(1);
+    }
+
+    /**
+     * 加载签到统计数据
+     */
+    function loadCheckinStats() {
+        api('get_checkin_stats').then(function (stats) {
+            document.getElementById('checkin-stat-links').textContent = formatNumber(stats.links_count || 0);
+            document.getElementById('checkin-stat-total').textContent = formatNumber(stats.total || 0);
+            document.getElementById('checkin-stat-today').textContent = formatNumber(stats.today || 0);
+        });
+    }
+
+    /**
+     * 加载签到链接列表
+     */
+    function loadCheckinLinks() {
+        api('get_checkins').then(function (data) {
+            renderCheckinLinks(data.checkins || []);
+        });
+    }
+
+    /**
+     * 渲染签到链接列表
+     */
+    function renderCheckinLinks(checkins) {
+        var container = document.getElementById('checkin-links-list');
+        var emptyDiv = document.getElementById('checkin-links-empty');
+
+        if (!checkins.length) {
+            container.innerHTML = '';
+            emptyDiv.style.display = '';
+            return;
+        }
+
+        emptyDiv.style.display = 'none';
+
+        var html = '';
+        checkins.forEach(function (item) {
+            var remark = escapeHtml(item.remark || '（无备注）');
+            var created = escapeHtml(item.created_at || '');
+            var count = formatNumber(item.checkin_count || 0);
+            var fullUrl = escapeHtml((window.SITE_URL || '') + '/checkin.php?id=' + encodeURIComponent(item.id));
+
+            html +=
+                '<div class="link-item" data-id="' + escapeHtml(item.id) + '">' +
+                    '<div class="link-info">' +
+                        '<div class="link-remark">' + remark + '</div>' +
+                        '<div class="link-url" title="' + fullUrl + '">' + fullUrl + '</div>' +
+                        '<div class="link-meta">签到 ' + count + ' 次 · 创建于 ' + created + '</div>' +
+                    '</div>' +
+                    '<div class="link-actions">' +
+                        '<button class="btn btn-secondary btn-sm btn-copy-checkin" data-url="' + fullUrl + '">' +
+                            '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' +
+                            ' 复制' +
+                        '</button>' +
+                        '<button class="btn btn-danger btn-sm btn-delete-checkin" data-id="' + escapeHtml(item.id) + '">' +
+                            '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>' +
+                            ' 删除' +
+                        '</button>' +
+                    '</div>' +
+                '</div>';
+        });
+
+        container.innerHTML = html;
+
+        container.querySelectorAll('.btn-copy-checkin').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                copyText(btn.getAttribute('data-url'));
+            });
+        });
+
+        container.querySelectorAll('.btn-delete-checkin').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                deleteCheckinLink(btn.getAttribute('data-id'));
+            });
+        });
+    }
+
+    /**
+     * 创建签到链接
+     */
+    function createCheckinLink() {
+        var remarkInput = document.getElementById('checkin-remark');
+        var remark = remarkInput.value.trim();
+        var btn = document.getElementById('create-checkin-btn');
+        btn.disabled = true;
+
+        api('create_checkin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ remark: remark })
+        }).then(function (data) {
+            var checkin = data.checkin || {};
+            var fullUrl = (window.SITE_URL || '') + '/checkin.php?id=' + encodeURIComponent(checkin.id || '');
+
+            document.getElementById('checkin-created-url').textContent = fullUrl;
+            document.getElementById('checkin-created').style.display = '';
+
+            remarkInput.value = '';
+            loadCheckins();
+            toast('签到链接创建成功', 'success');
+        }).catch(function (err) {
+            toast('创建失败：' + err.message, 'danger');
+        }).finally(function () {
+            btn.disabled = false;
+        });
+    }
+
+    /**
+     * 删除签到链接
+     */
+    function deleteCheckinLink(id) {
+        confirmDialog('确定要删除此签到链接吗？关联的签到记录将一并删除。').then(function (ok) {
+            if (!ok) return;
+            api('delete_checkin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id })
+            }).then(function () {
+                toast('签到链接已删除', 'success');
+                loadCheckins();
+            }).catch(function (err) {
+                toast('删除失败：' + err.message, 'danger');
+            });
+        });
+    }
+
+    /**
+     * 加载签到记录列表
+     */
+    function loadCheckinRecords(page) {
+        page = page || 1;
+        checkinPageNum = page;
+
+        var search = (document.getElementById('checkin-search-input').value || '').trim();
+        var url = (window.SITE_URL || '') + '/api.php?action=get_checkin_records&page=' + page + '&limit=20';
+        if (search) url += '&search=' + encodeURIComponent(search);
+
+        fetch(url).then(function (resp) {
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            return resp.json();
+        }).then(function (data) {
+            if (data.error) throw new Error(data.error);
+            renderCheckinRecords(data.records || []);
+            renderCheckinPagination(data.total || 0, page, 20);
+        }).catch(function (err) {
+            console.error('加载签到记录失败：', err);
+            toast('加载签到记录失败：' + (err.message || '未知错误'), 'danger');
+        });
+    }
+
+    /**
+     * 渲染签到记录表格
+     */
+    function renderCheckinRecords(records) {
+        var tbody = document.getElementById('checkin-records-tbody');
+        var emptyDiv = document.getElementById('checkin-records-empty');
+        var table = document.getElementById('checkin-records-table');
+
+        if (!records.length) {
+            table.style.display = 'none';
+            emptyDiv.style.display = '';
+            tbody.innerHTML = '';
+            return;
+        }
+
+        table.style.display = '';
+        emptyDiv.style.display = 'none';
+
+        var html = '';
+        records.forEach(function (rec) {
+            var ipv4 = escapeHtml(rec.ipv4 || '--');
+            var ipv6 = escapeHtml((rec.ipv6 || '--').substring(0, 20));
+            var os = escapeHtml(rec.os || '--');
+            var browser = escapeHtml(rec.browser || '--');
+            var city = escapeHtml((rec.location && rec.location.city) || '--');
+            var created = escapeHtml(rec.created_at || '--');
+            var recId = escapeHtml(rec.id || '');
+
+            html +=
+                '<tr data-id="' + recId + '">' +
+                    '<td><input type="checkbox" class="checkin-check" data-id="' + recId + '"></td>' +
+                    '<td>' + ipv4 + '</td>' +
+                    '<td style="font-size:12px;color:var(--color-text-secondary);">' + ipv6 + '</td>' +
+                    '<td>' + os + '</td>' +
+                    '<td>' + browser + '</td>' +
+                    '<td>' + city + '</td>' +
+                    '<td style="white-space:nowrap;">' + created + '</td>' +
+                '</tr>';
+        });
+
+        tbody.innerHTML = html;
+
+        // 行点击 → 详情
+        tbody.querySelectorAll('tr').forEach(function (row) {
+            row.addEventListener('click', function (e) {
+                if (e.target.type === 'checkbox') return;
+                var id = row.getAttribute('data-id');
+                showCheckinRecordDetail(id);
+            });
+        });
+
+        // Checkbox 勾选
+        tbody.querySelectorAll('.checkin-check').forEach(function (cb) {
+            cb.addEventListener('change', updateCheckinBatchDeleteBtn);
+        });
+
+        updateCheckinBatchDeleteBtn();
+    }
+
+    /** 获取已勾选的签到记录 ID */
+    function getSelectedCheckinIds() {
+        var ids = [];
+        document.querySelectorAll('.checkin-check:checked').forEach(function (cb) {
+            ids.push(cb.getAttribute('data-id'));
+        });
+        return ids;
+    }
+
+    /** 更新签到批量删除按钮显示 */
+    function updateCheckinBatchDeleteBtn() {
+        var ids = getSelectedCheckinIds();
+        var btn = document.getElementById('checkin-batch-delete-btn');
+        var countEl = document.getElementById('checkin-selected-count');
+        if (ids.length > 0) {
+            btn.style.display = '';
+            countEl.textContent = ids.length;
+        } else {
+            btn.style.display = 'none';
+        }
+    }
+
+    /**
+     * 渲染签到记录分页
+     */
+    function renderCheckinPagination(total, page, limit) {
+        var totalPages = Math.ceil(total / limit) || 1;
+        document.getElementById('checkin-page-info').textContent = '第 ' + page + ' / ' + totalPages + ' 页';
+        document.getElementById('checkin-page-prev').disabled = (page <= 1);
+        document.getElementById('checkin-page-next').disabled = (page >= totalPages);
+    }
+
+    /**
+     * 显示签到记录详情
+     */
+    function showCheckinRecordDetail(id) {
+        var url = (window.SITE_URL || '') + '/api.php?action=get_checkin_record&id=' + encodeURIComponent(id);
+        fetch(url).then(function (resp) {
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            return resp.json();
+        }).then(function (data) {
+            if (data.error) throw new Error(data.error);
+            var record = data.record || {};
+            var loc = record.location || {};
+            var gps = record.gps || {};
+
+            var locationStr = [loc.country, loc.province, loc.city, loc.district].filter(Boolean).join(' ');
+
+            // GPS 坐标
+            var gpsCoord = '--';
+            var gpsAccuracy = '--';
+            var gpsLink = '';
+            if (gps.latitude && gps.longitude) {
+                gpsCoord = gps.latitude.toFixed(6) + ', ' + gps.longitude.toFixed(6);
+                gpsAccuracy = gps.accuracy ? '±' + Math.round(gps.accuracy) + ' 米' : '--';
+                gpsLink = ' <a href="https://www.google.com/maps?q=' + gps.latitude + ',' + gps.longitude + '" target="_blank" style="font-size:12px;color:var(--color-primary);">在地图中查看</a>';
+            }
+
+            // 照片
+            var photoHtml = '';
+            if (record.photo_url) {
+                photoHtml =
+                    '<div style="padding:12px 16px;">' +
+                        '<div style="font-size:12px;font-weight:600;color:var(--color-text-secondary);margin-bottom:8px;">签到照片</div>' +
+                        '<img src="' + escapeHtml((window.SITE_URL || '') + record.photo_url) + '" ' +
+                        'style="max-width:100%;max-height:300px;border-radius:8px;cursor:pointer;" ' +
+                        'onclick="window.open(this.src)" alt="签到照片">' +
+                    '</div>';
+            }
+
+            var html =
+                photoHtml +
+                '<div class="group-list">' +
+                    '<div class="group-list-item"><span class="group-list-label">IPv4</span><span class="group-list-value" style="font-family:var(--font-mono);">' + escapeHtml(record.ipv4 || '--') + '</span></div>' +
+                    '<div class="group-list-item"><span class="group-list-label">IPv6</span><span class="group-list-value" style="font-family:var(--font-mono);">' + escapeHtml(record.ipv6 || '--') + '</span></div>' +
+                    '<div class="group-list-item"><span class="group-list-label">服务器 IP</span><span class="group-list-value" style="font-family:var(--font-mono);">' + escapeHtml(record.server_ip || '--') + '</span></div>' +
+                    '<div class="group-list-item"><span class="group-list-label">GPS 坐标</span><span class="group-list-value" style="font-family:var(--font-mono);">' + gpsCoord + gpsLink + '</span></div>' +
+                    '<div class="group-list-item"><span class="group-list-label">GPS 精度</span><span class="group-list-value">' + escapeHtml(gpsAccuracy) + '</span></div>' +
+                    '<div class="group-list-item"><span class="group-list-label">IP 位置</span><span class="group-list-value">' + escapeHtml(locationStr || '--') + '</span></div>' +
+                    '<div class="group-list-item"><span class="group-list-label">运营商</span><span class="group-list-value">' + escapeHtml(loc.isp || '--') + '</span></div>' +
+                    '<div class="group-list-item"><span class="group-list-label">代理/VPN</span><span class="group-list-value">' + (record.is_proxy ? '是' : '否') + '</span></div>' +
+                    '<div class="group-list-item"><span class="group-list-label">操作系统</span><span class="group-list-value">' + escapeHtml(record.os || '--') + '</span></div>' +
+                    '<div class="group-list-item"><span class="group-list-label">浏览器</span><span class="group-list-value">' + escapeHtml(record.browser || '--') + '</span></div>' +
+                    '<div class="group-list-item"><span class="group-list-label">屏幕</span><span class="group-list-value">' + escapeHtml(record.screen || '--') + '</span></div>' +
+                    '<div class="group-list-item"><span class="group-list-label">语言</span><span class="group-list-value">' + escapeHtml(record.language || '--') + '</span></div>' +
+                    '<div class="group-list-item"><span class="group-list-label">签到时间</span><span class="group-list-value">' + escapeHtml(record.created_at || '--') + '</span></div>' +
+                '</div>';
+
+            document.getElementById('modal-body').innerHTML = html;
+            document.getElementById('detail-modal').style.display = '';
+        }).catch(function (err) {
+            toast('获取详情失败：' + err.message, 'danger');
+        });
+    }
+
+    /**
+     * 初始化签到页面事件绑定
+     */
+    function initCheckinEvents() {
+        var createBtn = document.getElementById('create-checkin-btn');
+        if (createBtn) {
+            createBtn.addEventListener('click', createCheckinLink);
+        }
+
+        var copyBtn = document.getElementById('copy-checkin-btn');
+        if (copyBtn) {
+            copyBtn.addEventListener('click', function () {
+                var url = document.getElementById('checkin-created-url').textContent;
+                copyText(url);
+            });
+        }
+
+        var searchInput = document.getElementById('checkin-search-input');
+        if (searchInput) {
+            var searchTimer;
+            searchInput.addEventListener('input', function () {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(function () {
+                    checkinPageNum = 1;
+                    loadCheckinRecords(1);
+                }, 300);
+            });
+        }
+
+        var prevBtn = document.getElementById('checkin-page-prev');
+        if (prevBtn) {
+            prevBtn.addEventListener('click', function () {
+                if (checkinPageNum > 1) loadCheckinRecords(checkinPageNum - 1);
+            });
+        }
+
+        var nextBtn = document.getElementById('checkin-page-next');
+        if (nextBtn) {
+            nextBtn.addEventListener('click', function () {
+                loadCheckinRecords(checkinPageNum + 1);
+            });
+        }
+
+        // 全选 checkbox
+        var selectAll = document.getElementById('checkin-select-all');
+        if (selectAll) {
+            selectAll.addEventListener('change', function () {
+                document.querySelectorAll('.checkin-check').forEach(function (cb) {
+                    cb.checked = selectAll.checked;
+                });
+                updateCheckinBatchDeleteBtn();
+            });
+        }
+
+        // 批量删除按钮
+        var batchDelBtn = document.getElementById('checkin-batch-delete-btn');
+        if (batchDelBtn) {
+            batchDelBtn.addEventListener('click', function () {
+                var ids = getSelectedCheckinIds();
+                if (!ids.length) return;
+                confirmDialog('确定要删除选中的 ' + ids.length + ' 条签到记录吗？').then(function (ok) {
+                    if (!ok) return;
+                    api('delete_checkin_records', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ids: ids })
+                    }).then(function () {
+                        toast('已删除 ' + ids.length + ' 条记录', 'success');
+                        loadCheckinRecords(checkinPageNum);
+                        loadCheckinStats();
+                    }).catch(function (err) {
+                        toast('删除失败：' + err.message, 'danger');
+                    });
+                });
+            });
+        }
     }
 
     /* ====== 个性化设置 ====== */
@@ -1052,10 +1527,194 @@
         });
     }
 
+    /* ====== 修改密码 ====== */
+
+    function initChangePassword() {
+        var btn     = document.getElementById('change-pwd-btn');
+        var area    = document.getElementById('change-pwd-area');
+        var oldPwd  = document.getElementById('change-pwd-old');
+        var newPwd  = document.getElementById('change-pwd-new');
+        var confirm = document.getElementById('change-pwd-confirm');
+        var errEl   = document.getElementById('change-pwd-error');
+        var submit  = document.getElementById('change-pwd-submit');
+        var cancel  = document.getElementById('change-pwd-cancel');
+
+        btn.addEventListener('click', function () {
+            oldPwd.value = '';
+            newPwd.value = '';
+            confirm.value = '';
+            errEl.style.display = 'none';
+            area.style.display = '';
+            oldPwd.focus();
+        });
+
+        cancel.addEventListener('click', function () {
+            area.style.display = 'none';
+        });
+
+        submit.addEventListener('click', function () {
+            var oldVal = oldPwd.value;
+            var newVal = newPwd.value;
+            var confVal = confirm.value;
+
+            if (!oldVal || !newVal || !confVal) {
+                errEl.textContent = '请填写所有字段';
+                errEl.style.display = '';
+                return;
+            }
+            if (newVal !== confVal) {
+                errEl.textContent = '两次输入的新密码不一致';
+                errEl.style.display = '';
+                return;
+            }
+            if (newVal.length < 8) {
+                errEl.textContent = '新密码至少 8 个字符';
+                errEl.style.display = '';
+                return;
+            }
+
+            errEl.style.display = 'none';
+            submit.disabled = true;
+
+            api('change_password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ old_password: oldVal, new_password: newVal, confirm_password: confVal })
+            }).then(function () {
+                toast('密码已修改，请重新登录', 'success');
+                setTimeout(function () { location.reload(); }, 1500);
+            }).catch(function (err) {
+                errEl.textContent = err.message || '修改失败';
+                errEl.style.display = '';
+            }).finally(function () {
+                submit.disabled = false;
+            });
+        });
+    }
+
+    /* ====== 两步验证管理 ====== */
+
+    function init2FA() {
+        var statusText  = document.getElementById('twofa-status-text');
+        var setupBtn    = document.getElementById('twofa-setup-btn');
+        var disableBtn  = document.getElementById('twofa-disable-btn');
+        var setupArea   = document.getElementById('twofa-setup-area');
+        var disableArea = document.getElementById('twofa-disable-area');
+
+        // 加载 2FA 状态
+        function loadStatus() {
+            api('get_2fa_status').then(function (data) {
+                if (data.enabled) {
+                    statusText.textContent = '已启用';
+                    statusText.style.color = '#34C759';
+                    setupBtn.style.display = 'none';
+                    disableBtn.style.display = '';
+                } else {
+                    statusText.textContent = '未启用';
+                    statusText.style.color = '#8E8E93';
+                    setupBtn.style.display = '';
+                    disableBtn.style.display = 'none';
+                }
+                setupArea.style.display = 'none';
+                disableArea.style.display = 'none';
+            });
+        }
+
+        loadStatus();
+
+        // 启用按钮 → 生成二维码
+        setupBtn.addEventListener('click', function () {
+            api('setup_2fa').then(function (data) {
+                document.getElementById('twofa-qr').src = data.qr_url;
+                document.getElementById('twofa-secret-display').textContent = data.secret;
+                document.getElementById('twofa-verify-code').value = '';
+                document.getElementById('twofa-verify-error').style.display = 'none';
+                setupArea.style.display = '';
+                disableArea.style.display = 'none';
+                document.getElementById('twofa-verify-code').focus();
+            }).catch(function (err) {
+                toast('生成密钥失败：' + err.message, 'danger');
+            });
+        });
+
+        // 确认验证码
+        document.getElementById('twofa-verify-btn').addEventListener('click', function () {
+            var code = document.getElementById('twofa-verify-code').value.trim();
+            var errEl = document.getElementById('twofa-verify-error');
+            if (!code || code.length !== 6) {
+                errEl.textContent = '请输入 6 位验证码';
+                errEl.style.display = '';
+                return;
+            }
+
+            api('verify_2fa', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: code })
+            }).then(function () {
+                toast('两步验证已启用', 'success');
+                loadStatus();
+            }).catch(function (err) {
+                errEl.textContent = err.message || '验证码错误';
+                errEl.style.display = '';
+                document.getElementById('twofa-verify-code').value = '';
+                document.getElementById('twofa-verify-code').focus();
+            });
+        });
+
+        // 取消设置
+        document.getElementById('twofa-cancel-btn').addEventListener('click', function () {
+            setupArea.style.display = 'none';
+        });
+
+        // 关闭按钮 → 显示密码确认
+        disableBtn.addEventListener('click', function () {
+            document.getElementById('twofa-disable-password').value = '';
+            document.getElementById('twofa-disable-error').style.display = 'none';
+            disableArea.style.display = '';
+            setupArea.style.display = 'none';
+            document.getElementById('twofa-disable-password').focus();
+        });
+
+        // 确认关闭
+        document.getElementById('twofa-confirm-disable-btn').addEventListener('click', function () {
+            var pwd = document.getElementById('twofa-disable-password').value;
+            var errEl = document.getElementById('twofa-disable-error');
+            if (!pwd) {
+                errEl.textContent = '请输入密码';
+                errEl.style.display = '';
+                return;
+            }
+
+            api('disable_2fa', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: pwd })
+            }).then(function () {
+                toast('两步验证已关闭', 'success');
+                loadStatus();
+            }).catch(function (err) {
+                errEl.textContent = err.message || '关闭失败';
+                errEl.style.display = '';
+            });
+        });
+
+        // 取消关闭
+        document.getElementById('twofa-cancel-disable-btn').addEventListener('click', function () {
+            disableArea.style.display = 'none';
+        });
+    }
+
     /**
      * 初始化设置页面事件
      */
     function initSettings() {
+        // 修改密码
+        initChangePassword();
+
+        // 两步验证
+        init2FA();
+
         // 导航模式切换
         var navToggle = document.getElementById('setting-nav-mode');
         if (navToggle) {
@@ -1187,11 +1846,15 @@
         bindEvents();
 
         // 已登录时根据 hash 加载页面
-        // 用 check_auth 接口判断，而非依赖 DOM style（更可靠）
         api('check_auth').then(function (data) {
             if (data.logged_in) {
                 var hash = location.hash.replace('#', '') || 'dashboard';
                 navigateTo(hash);
+            } else if (data.need_2fa) {
+                // 密码已验证，等待 2FA
+                document.getElementById('login-step-password').style.display = 'none';
+                document.getElementById('login-step-2fa').style.display = '';
+                document.getElementById('login-2fa-code').focus();
             }
         }).catch(function () {
             // 未登录，不加载数据

@@ -18,7 +18,7 @@
 function save_record(array $client_data): array
 {
     // 生成唯一记录 ID
-    $id = 'rec_' . uniqid();
+    $id = 'rec_' . bin2hex(random_bytes(6));
 
     // 构建完整记录 — PHP 端注入字段 + 客户端传入字段
     $record = [
@@ -93,7 +93,7 @@ function get_records(int $page = 1, int $limit = 20, string $search = ''): array
                 mb_strtolower($record['location']['city'] ?? '', 'UTF-8'),
             ];
             foreach ($fields as $field) {
-                if (stripos($field, $search) !== false) {
+                if (stripos($field, $searchLower) !== false) {
                     return true;
                 }
             }

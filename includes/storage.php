@@ -87,17 +87,67 @@ function write_json(string $file, array $data): bool
  */
 function append_record(string $file, string $key, array $record): bool
 {
-    $data = read_json($file);
+    $fp = fopen($file, 'c+');
+    if ($fp === false) return false;
 
-    // 确保键存在
+    if (!flock($fp, LOCK_EX)) {
+        fclose($fp);
+        return false;
+    }
+
+    // 用同一个文件句柄读取
+    $content = '';
+    while (!feof($fp)) {
+        $content .= fread($fp, 8192);
+    }
+
+    $data = ($content && trim($content) !== '') ? json_decode($content, true) : [];
+    if (!is_array($data)) $data = [];
+
     if (!isset($data[$key]) || !is_array($data[$key])) {
         $data[$key] = [];
     }
 
-    // 追加记录
     $data[$key][] = $record;
+    $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
-    return write_json($file, $data);
+    ftruncate($fp, 0);
+    rewind($fp);
+    $written = fwrite($fp, $json);
+
+    flock($fp, LOCK_UN);
+    fclose($fp);
+
+    return $written !== false;
+}
+
+/**
+ * 检查 IP 频率限制 — 在指定秒数内同一 IP 是否已提交过
+ * 
+ * @param string $file    记录文件路径
+ * @param string $key     记录数组键名
+ * @param string $ip      当前 IP
+ * @param int    $seconds 限制秒数
+ * @return bool 如果被限制返回 true
+ */
+function is_rate_limited(string $file, string $key, string $ip, int $seconds): bool
+{
+    $data = read_json($file);
+    $records = $data[$key] ?? [];
+    if (empty($records)) return false;
+
+    $now = time();
+    // 检查最近 100 条记录中是否有同 IP 的
+    $recent = array_slice($records, -100);
+    foreach ($recent as $record) {
+        $recordIp = $record['server_ip'] ?? '';
+        $recordTime = strtotime($record['created_at'] ?? '');
+        if ($recordIp === $ip && $recordTime !== false && ($now - $recordTime) < $seconds) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 /**

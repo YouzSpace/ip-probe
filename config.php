@@ -42,19 +42,36 @@ define('RECORDS_FILE', DATA_DIR . '/records.json');
 /** 采集链接 JSON 文件 */
 define('LINKS_FILE', DATA_DIR . '/links.json');
 
+/** 签到链接 JSON 文件 */
+define('CHECKINS_FILE', DATA_DIR . '/checkins.json');
+
+/** 签到记录 JSON 文件 */
+define('CHECKIN_RECORDS_FILE', DATA_DIR . '/checkin_records.json');
+
+/** 签到照片存储目录 */
+define('PHOTOS_DIR', DATA_DIR . '/photos');
+
 // ====== 站点配置 ======
 
 /** 站点根 URL（自动检测，部署时也可手动覆盖） */
-if (isset($_SERVER['REQUEST_SCHEME'], $_SERVER['HTTP_HOST'], $_SERVER['SCRIPT_NAME'])) {
-    define('SITE_URL', $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'] . rtrim(dirname($_SERVER['SCRIPT_NAME']), '/'));
+if (defined('SITE_URL_OVERRIDE') && !empty(SITE_URL_OVERRIDE)) {
+    define('SITE_URL', rtrim(SITE_URL_OVERRIDE, '/'));
+} elseif (isset($_SERVER['REQUEST_SCHEME'], $_SERVER['HTTP_HOST'], $_SERVER['SCRIPT_NAME'])) {
+    // 限制 HTTP_HOST 只允许字母、数字、点、冒号（端口号），防止 Host 头注入
+    $host = $_SERVER['HTTP_HOST'];
+    if (preg_match('/^[a-zA-Z0-9.:\-]+$/', $host)) {
+        define('SITE_URL', $_SERVER['REQUEST_SCHEME'] . '://' . $host . rtrim(dirname($_SERVER['SCRIPT_NAME']), '/'));
+    } else {
+        define('SITE_URL', '');
+    }
 } else {
     define('SITE_URL', '');
 }
 
 // ====== 会话配置 ======
 
-/** Session 有效期（秒），默认 2 小时 */
-define('SESSION_LIFETIME', 7200);
+/** Session 有效期（秒），0 = 不过期 */
+define('SESSION_LIFETIME', 0);
 
 // ====== 安全配置 ======
 
@@ -65,11 +82,16 @@ define('RATE_LIMIT_SECONDS', 10);
 
 // 自动初始化 data 目录
 if (!is_dir(DATA_DIR)) {
-    mkdir(DATA_DIR, 0755, true);
+    mkdir(DATA_DIR, 0700, true);
+}
+
+// 自动初始化 photos 目录
+if (!is_dir(PHOTOS_DIR)) {
+    mkdir(PHOTOS_DIR, 0700, true);
 }
 
 // 自动初始化 JSON 文件
-foreach ([RECORDS_FILE, LINKS_FILE] as $file) {
+foreach ([RECORDS_FILE, LINKS_FILE, CHECKINS_FILE, CHECKIN_RECORDS_FILE] as $file) {
     if (!file_exists($file)) {
         file_put_contents($file, json_encode([], JSON_PRETTY_PRINT));
     }

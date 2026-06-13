@@ -134,13 +134,23 @@ function is_valid_location(array $loc): bool
  */
 function http_get_json(string $url, int $timeout = 5): ?array
 {
-    $context = stream_context_create([
+    $opts = [
         'http' => [
             'timeout' => $timeout,
             'method'  => 'GET',
+            'header'  => "User-Agent: ip-probe\r\n",
         ],
-    ]);
+    ];
 
+    // HTTPS 请求启用 SSL 证书验证
+    if (stripos($url, 'https://') === 0) {
+        $opts['ssl'] = [
+            'verify_peer'      => true,
+            'verify_peer_name' => true,
+        ];
+    }
+
+    $context = stream_context_create($opts);
     $response = @file_get_contents($url, false, $context);
     if ($response === false) return null;
 
