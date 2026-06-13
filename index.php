@@ -392,7 +392,9 @@ $isLoggedIn = is_logged_in();
                 <div class="group-list">
                     <div class="group-list-item"><span class="group-list-label">项目名称</span><span class="group-list-value">IP 探针系统</span></div>
                     <div class="group-list-item"><span class="group-list-label">版本</span><span class="group-list-value"><?php echo APP_VERSION; ?></span></div>
-                    <div class="group-list-item"><span class="group-list-label">运行环境</span><span class="group-list-value">PHP + JSON 文件存储（无数据库）</span></div>
+                    <div class="group-list-item"><span class="group-list-label">运行环境</span><span class="group-list-value">PHP <?php echo PHP_VERSION; ?> + SQLite <?php echo SQLite3::version()['versionString']; ?></span></div>
+                    <div class="group-list-item"><span class="group-list-label">数据存储</span><span class="group-list-value">单文件 SQLite 数据库（WAL 模式）</span></div>
+                    <div class="group-list-item"><span class="group-list-label">前端框架</span><span class="group-list-value">原生 JS（无依赖）+ Chart.js 4.x</span></div>
                     <div class="group-list-item"><span class="group-list-label">开发者</span><span class="group-list-value">数字柚子 · 小柚子</span></div>
                 </div>
             </div>
@@ -409,17 +411,14 @@ $isLoggedIn = is_logged_in();
                 <div id="update-status" style="display:none;margin:12px 16px 16px;padding:12px 16px;border-radius:var(--radius-sm);font-size:14px;line-height:1.6;"></div>
                 <div style="padding:0 16px 16px;display:flex;justify-content:flex-end;">
                     <button class="btn btn-primary" id="check-update-btn" onclick="checkUpdate()">
-                        <!-- Lucide: RefreshCw -->
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
                         检查更新
                     </button>
                     <a id="update-link" href="https://github.com/YouzSpace/ip-probe" target="_blank" class="btn btn-ghost btn-sm" style="margin-left:8px;display:none;">
-                        <!-- Lucide: ExternalLink -->
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                         查看详情
                     </a>
                     <button class="btn btn-success btn-sm" id="update-now-btn" style="margin-left:8px;display:none;" onclick="doUpdate()">
-                        <!-- Lucide: Download -->
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         立即更新
                     </button>
@@ -433,11 +432,13 @@ $isLoggedIn = is_logged_in();
                     <div class="group-list-item"><span class="group-list-label">WebRTC 内网 IP</span><span class="group-list-value">通过 WebRTC 探测局域网真实 IP</span></div>
                     <div class="group-list-item"><span class="group-list-label">公网 IPv4 / IPv6</span><span class="group-list-value">通过 ipify 获取公网双栈地址</span></div>
                     <div class="group-list-item"><span class="group-list-label">地理位置</span><span class="group-list-value">精确到区县级（ip9.com.cn，免费免 Key）</span></div>
-                    <div class="group-list-item"><span class="group-list-label">操作系统 / 浏览器</span><span class="group-list-value">User-Agent 解析</span></div>
+                    <div class="group-list-item"><span class="group-list-label">操作系统 / 浏览器</span><span class="group-list-value">User-Agent 解析（支持国产浏览器识别）</span></div>
                     <div class="group-list-item"><span class="group-list-label">屏幕分辨率</span><span class="group-list-value">逻辑分辨率 + 设备像素比</span></div>
                     <div class="group-list-item"><span class="group-list-label">系统语言</span><span class="group-list-value">navigator.language</span></div>
                     <div class="group-list-item"><span class="group-list-label">电池状态</span><span class="group-list-value">电量 + 充电状态（Battery API）</span></div>
                     <div class="group-list-item"><span class="group-list-label">VPN / 代理检测</span><span class="group-list-value">基于 WebRTC 泄漏与 IP 归属地比对</span></div>
+                    <div class="group-list-item"><span class="group-list-label">GPS 定位</span><span class="group-list-value">签到功能专用，浏览器 Geolocation API</span></div>
+                    <div class="group-list-item"><span class="group-list-label">拍照签到</span><span class="group-list-value">签到功能专用，前置/后置摄像头拍摄</span></div>
                 </div>
             </div>
 
@@ -460,13 +461,31 @@ $isLoggedIn = is_logged_in();
                 </div>
             </div>
 
-            <!-- 文件结构 -->
+            <!-- 安全特性 -->
+            <div class="card" style="margin-bottom:20px;">
+                <div class="card-title">安全特性</div>
+                <div class="group-list">
+                    <div class="group-list-item"><span class="group-list-label">两步验证</span><span class="group-list-value">Google Authenticator（TOTP RFC 6238）</span></div>
+                    <div class="group-list-item"><span class="group-list-label">暴力破解防护</span><span class="group-list-value">同 IP 5 次失败锁定 5 分钟</span></div>
+                    <div class="group-list-item"><span class="group-list-label">Session 安全</span><span class="group-list-value">HttpOnly + SameSite Lax + Secure + 登录后 regenerate</span></div>
+                    <div class="group-list-item"><span class="group-list-label">密码存储</span><span class="group-list-value">bcrypt 哈希，最小 8 位</span></div>
+                    <div class="group-list-item"><span class="group-list-label">防重放</span><span class="group-list-value">同 IP 请求频率限制</span></div>
+                    <div class="group-list-item"><span class="group-list-label">目录保护</span><span class="group-list-value">data/ 和 includes/ 禁止 HTTP 直接访问</span></div>
+                    <div class="group-list-item"><span class="group-list-label">XSS 防护</span><span class="group-list-value">输出统一 HTML 转义 + Host 头校验</span></div>
+                </div>
+            </div>
+
+            <!-- 数据存储 -->
             <div class="card">
                 <div class="card-title">数据存储结构</div>
                 <div class="group-list">
-                    <div class="group-list-item"><span class="group-list-label">records.json</span><span class="group-list-value">采集记录，追加写入</span></div>
-                    <div class="group-list-item"><span class="group-list-label">links.json</span><span class="group-list-value">采集链接配置</span></div>
-                    <div class="group-list-item"><span class="group-list-label">.password_hash</span><span class="group-list-value">管理员密码哈希（bcrypt）</span></div>
+                    <div class="group-list-item"><span class="group-list-label">ipprobe.db</span><span class="group-list-value">SQLite 数据库（全部数据）</span></div>
+                    <div class="group-list-item"><span class="group-list-label">├─ links</span><span class="group-list-value">采集链接表</span></div>
+                    <div class="group-list-item"><span class="group-list-label">├─ records</span><span class="group-list-value">采集记录表</span></div>
+                    <div class="group-list-item"><span class="group-list-label">├─ checkin_links</span><span class="group-list-value">签到链接表</span></div>
+                    <div class="group-list-item"><span class="group-list-label">├─ checkin_records</span><span class="group-list-value">签到记录表</span></div>
+                    <div class="group-list-item"><span class="group-list-label">└─ settings</span><span class="group-list-value">配置表（密码/2FA/锁定）</span></div>
+                    <div class="group-list-item"><span class="group-list-label">photos/</span><span class="group-list-value">签到照片目录</span></div>
                     <div class="group-list-item"><span class="group-list-label">.htaccess</span><span class="group-list-value">阻止 data/ 目录直接访问</span></div>
                 </div>
             </div>

@@ -8,6 +8,7 @@
 
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/includes/storage.php';
+require_once __DIR__ . '/includes/database.php';
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/totp.php';
 require_once __DIR__ . '/includes/ip.php';
@@ -277,7 +278,7 @@ function handle_save(): void
     }
 
     // 防重放
-    if (is_rate_limited(RECORDS_FILE, 'records', get_client_ip(), RATE_LIMIT_SECONDS)) {
+    if (is_rate_limited('records', '', get_client_ip(), RATE_LIMIT_SECONDS)) {
         echo json_encode(['success' => false, 'error' => '提交过于频繁，请稍后再试'], JSON_UNESCAPED_UNICODE);
         return;
     }
@@ -659,7 +660,7 @@ function handle_checkin_save(): void
     }
 
     // 防重放
-    if (is_rate_limited(CHECKIN_RECORDS_FILE, 'records', get_client_ip(), RATE_LIMIT_SECONDS)) {
+    if (is_rate_limited('checkin_records', '', get_client_ip(), RATE_LIMIT_SECONDS)) {
         echo json_encode(['success' => false, 'error' => '签到过于频繁，请稍后再试'], JSON_UNESCAPED_UNICODE);
         return;
     }
@@ -707,7 +708,7 @@ function handle_checkin_upload(): void
     }
 
     // 防重放
-    if (is_rate_limited(CHECKIN_RECORDS_FILE, 'records', get_client_ip(), RATE_LIMIT_SECONDS)) {
+    if (is_rate_limited('checkin_records', '', get_client_ip(), RATE_LIMIT_SECONDS)) {
         echo json_encode(['success' => false, 'error' => '签到过于频繁，请稍后再试'], JSON_UNESCAPED_UNICODE);
         return;
     }
@@ -1048,8 +1049,7 @@ function handle_change_password(): void
 
     // 保存新密码
     $newHash = password_hash($newPassword, PASSWORD_DEFAULT);
-    $hashFile = DATA_DIR . '/.password_hash';
-    if (file_put_contents($hashFile, $newHash) === false) {
+    if (!set_setting('password_hash', $newHash)) {
         http_response_code(500);
         echo json_encode(['success' => false, 'error' => '密码保存失败'], JSON_UNESCAPED_UNICODE);
         return;

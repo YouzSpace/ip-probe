@@ -1299,7 +1299,7 @@
             if (gps.latitude && gps.longitude) {
                 gpsCoord = gps.latitude.toFixed(6) + ', ' + gps.longitude.toFixed(6);
                 gpsAccuracy = gps.accuracy ? '±' + Math.round(gps.accuracy) + ' 米' : '--';
-                gpsLink = ' <a href="https://www.google.com/maps?q=' + gps.latitude + ',' + gps.longitude + '" target="_blank" style="font-size:12px;color:var(--color-primary);">在地图中查看</a>';
+                gpsLink = ' <a href="https://uri.amap.com/marker?position=' + gps.longitude + ',' + gps.latitude + '" target="_blank" style="font-size:12px;color:var(--color-primary);">在地图中查看</a>';
             }
 
             // 照片

@@ -9,27 +9,21 @@
  * 4. 上传照片 + 签到数据 → 显示签到成功
  */
 require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/includes/storage.php';
+ require_once __DIR__ . '/includes/storage.php';
+ require_once __DIR__ . '/includes/database.php';
+ require_once __DIR__ . '/includes/checkins.php';
 
-$id = $_GET['id'] ?? '';
-if (empty($id)) {
-    http_response_code(404);
-    exit('签到链接无效');
-}
+ $id = $_GET['id'] ?? '';
+ if (empty($id)) {
+     http_response_code(404);
+     exit('签到链接无效');
+ }
 
-$checkinsData = read_json(CHECKINS_FILE);
-$checkins = $checkinsData['checkins'] ?? [];
-$checkin = null;
-foreach ($checkins as $item) {
-    if ($item['id'] === $id) {
-        $checkin = $item;
-        break;
-    }
-}
-if (!$checkin) {
-    http_response_code(404);
-    exit('签到链接不存在或已被使用');
-}
+ $checkin = get_checkin_link($id);
+ if (!$checkin) {
+     http_response_code(404);
+     exit('签到链接不存在或已被使用');
+ }
 ?>
 <!DOCTYPE html>
 <html lang="zh-CN">

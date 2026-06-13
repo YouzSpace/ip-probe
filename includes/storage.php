@@ -122,35 +122,6 @@ function append_record(string $file, string $key, array $record): bool
 }
 
 /**
- * 检查 IP 频率限制 — 在指定秒数内同一 IP 是否已提交过
- * 
- * @param string $file    记录文件路径
- * @param string $key     记录数组键名
- * @param string $ip      当前 IP
- * @param int    $seconds 限制秒数
- * @return bool 如果被限制返回 true
- */
-function is_rate_limited(string $file, string $key, string $ip, int $seconds): bool
-{
-    $data = read_json($file);
-    $records = $data[$key] ?? [];
-    if (empty($records)) return false;
-
-    $now = time();
-    // 检查最近 100 条记录中是否有同 IP 的
-    $recent = array_slice($records, -100);
-    foreach ($recent as $record) {
-        $recordIp = $record['server_ip'] ?? '';
-        $recordTime = strtotime($record['created_at'] ?? '');
-        if ($recordIp === $ip && $recordTime !== false && ($now - $recordTime) < $seconds) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-/**
  * 根据 ID 列表批量删除记录
  * 
  * @param string $file JSON 文件路径

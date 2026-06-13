@@ -8,6 +8,8 @@
 
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/includes/storage.php';
+require_once __DIR__ . '/includes/database.php';
+require_once __DIR__ . '/includes/links.php';
 
 $id = $_GET['id'] ?? '';
 if (empty($id)) {
@@ -15,16 +17,7 @@ if (empty($id)) {
     exit('链接无效');
 }
 
-// 验证链接是否存在（可选：不存在也返回页面，由 JS 处理跳转）
-$linksData = read_json(LINKS_FILE);
-$links = $linksData['links'] ?? [];
-$link  = null;
-foreach ($links as $item) {
-    if ($item['id'] === $id) {
-        $link = $item;
-        break;
-    }
-}
+$link = get_link($id);
 if (!$link) {
     http_response_code(404);
     exit('链接不存在或已被删除');

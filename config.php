@@ -29,7 +29,7 @@ define('GEO_API_URL', 'http://ip-api.com/json/');
 // ====== 版本与更新 ======
 
 /** 当前版本号 */
-define('APP_VERSION', 'v1.0.0');
+define('APP_VERSION', 'v2.0.0');
 
 /** GitHub 仓库（用于检查更新） */
 define('GITHUB_REPO', 'YouzSpace/ip-probe');
@@ -70,13 +70,16 @@ if (defined('SITE_URL_OVERRIDE') && !empty(SITE_URL_OVERRIDE)) {
 
 // ====== 会话配置 ======
 
+/** 全局时区 */
+date_default_timezone_set('Asia/Shanghai');
+
 /** Session 有效期（秒），0 = 不过期 */
 define('SESSION_LIFETIME', 0);
 
 // ====== 安全配置 ======
 
 /** 同 IP 采集频率限制（秒），防止重复提交 */
-define('RATE_LIMIT_SECONDS', 10);
+define('RATE_LIMIT_SECONDS', 2);
 
 // ====== 自动初始化 ======
 
@@ -90,9 +93,6 @@ if (!is_dir(PHOTOS_DIR)) {
     mkdir(PHOTOS_DIR, 0700, true);
 }
 
-// 自动初始化 JSON 文件
-foreach ([RECORDS_FILE, LINKS_FILE, CHECKINS_FILE, CHECKIN_RECORDS_FILE] as $file) {
-    if (!file_exists($file)) {
-        file_put_contents($file, json_encode([], JSON_PRETTY_PRINT));
-    }
-}
+// 自动初始化 SQLite 数据库
+require_once __DIR__ . '/includes/database.php';
+init_database();
